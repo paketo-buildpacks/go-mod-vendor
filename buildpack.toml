@@ -1,0 +1,8 @@
+
+[buildpack]
+id = "org.cloudfoundry.go-mod"
+name = "Go Mod Buildpack"
+version = "0.0.1"
+
+[[stacks]]
+id = "org.cloudfoundry.stacks.cflinuxfs3"
