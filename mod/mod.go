@@ -66,17 +66,12 @@ func (c Contributor) Contribute() error {
 	if err := c.goModLayer.Contribute(c.goModMetadata, c.contributeGoModules, c.flags()...); err != nil {
 		return err
 	}
-	c.logger.Info("Running `go build`")
-	if err := c.runner.Run("go", c.appRoot, false, "build", "-buildmode", "pie", "-tags", "cloudfoundry"); err != nil {
+
+	if err := c.Install(); err != nil {
 		return err
 	}
 
-	appName, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
-	if err != nil {
-		return err
-	}
-
-	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", "./" + appName}}})
+	return c.setStartCommand()
 }
 
 func (c Contributor) contributeGoModules(layer layers.Layer) error {
@@ -87,4 +82,31 @@ func (c Contributor) flags() []layers.Flag {
 	var flags []layers.Flag
 
 	return flags
+}
+
+func (c Contributor) Install() error {
+	c.logger.Info("Running `go build`")
+	if err := c.runner.Run("go", c.appRoot, false, "build", "-buildmode", "pie", "-tags", "cloudfoundry"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c Contributor) getAppName() (string, error) {
+	appName, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
+	if err != nil {
+		return "", err
+	}
+
+	return appName, nil
+}
+
+func (c Contributor) setStartCommand() error {
+	appName, err := c.getAppName()
+	if err != nil {
+		return err
+	}
+
+	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", "./" + appName}}})
 }

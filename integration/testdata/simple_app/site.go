@@ -17,8 +17,7 @@ type Config struct {
 func main() {
 	var conf Config
 	if _, err := toml.Decode("whatever", &conf); err != nil {
-		// handle error
-		fmt.Println("Unhandled error")
+		fmt.Println("toml library installed")
 	}
 
 	u2 := uuid.NewV4()
