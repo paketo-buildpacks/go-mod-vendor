@@ -12,7 +12,7 @@ import (
 type Command struct {
 }
 
-func (r Command) Run(bin, dir string, quiet bool, args ...string) error {
+func (c Command) Run(bin, dir string, quiet bool, args ...string) error {
 	cmd := exec.Command(bin, args...)
 	cmd.Dir = dir
 	if quiet {
@@ -25,7 +25,7 @@ func (r Command) Run(bin, dir string, quiet bool, args ...string) error {
 	return cmd.Run()
 }
 
-func (r Command) RunWithOutput(bin, dir string, quiet bool, args ...string) (string, error) {
+func (c Command) RunWithOutput(bin, dir string, quiet bool, args ...string) (string, error) {
 	logs := &bytes.Buffer{}
 
 	cmd := exec.Command(bin, args...)
@@ -40,4 +40,8 @@ func (r Command) RunWithOutput(bin, dir string, quiet bool, args ...string) (str
 	err := cmd.Run()
 
 	return strings.TrimSpace(logs.String()), err
+}
+
+func (c Command) SetEnv(variableName string, path string) error {
+	return os.Setenv(variableName, path)
 }

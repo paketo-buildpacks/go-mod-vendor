@@ -1,6 +1,8 @@
 package mod
 
 import (
+	"path/filepath"
+
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 )
@@ -12,6 +14,7 @@ const (
 type Runner interface {
 	Run(bin, dir string, quiet bool, args ...string) error
 	RunWithOutput(bin, dir string, quiet bool, args ...string) (string, error)
+	SetEnv(variableName string, path string) error
 }
 
 type Logger interface {
@@ -79,14 +82,18 @@ func (c Contributor) contributeGoModules(layer layers.Layer) error {
 }
 
 func (c Contributor) flags() []layers.Flag {
-	var flags []layers.Flag
-
+	flags := []layers.Flag{layers.Cache, layers.Launch}
 	return flags
 }
 
 func (c Contributor) Install() error {
-	c.logger.Info("Running `go build`")
-	if err := c.runner.Run("go", c.appRoot, false, "build", "-buildmode", "pie", "-tags", "cloudfoundry"); err != nil {
+	c.logger.Info("Setting environment variables")
+	if err := c.runner.SetEnv("GOPATH", c.goModLayer.Root); err != nil {
+		return err
+	}
+
+	c.logger.Info("Running `go install`")
+	if err := c.runner.Run("go", c.appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry"); err != nil {
 		return err
 	}
 
@@ -108,5 +115,6 @@ func (c Contributor) setStartCommand() error {
 		return err
 	}
 
-	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", "./" + appName}}})
+	proc := filepath.Join(c.goModLayer.Root, "bin", appName)
+	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", proc}}})
 }

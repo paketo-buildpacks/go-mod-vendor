@@ -67,6 +67,56 @@ func (mr *MockRunnerMockRecorder) RunWithOutput(bin, dir, quiet interface{}, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunWithOutput", reflect.TypeOf((*MockRunner)(nil).RunWithOutput), varargs...)
 }
 
+// SetEnv mocks base method
+func (m *MockRunner) SetEnv(variableName, path string) error {
+	ret := m.ctrl.Call(m, "SetEnv", variableName, path)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetEnv indicates an expected call of SetEnv
+func (mr *MockRunnerMockRecorder) SetEnv(variableName, path interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEnv", reflect.TypeOf((*MockRunner)(nil).SetEnv), variableName, path)
+}
+
+// MockLogger is a mock of Logger interface
+type MockLogger struct {
+	ctrl     *gomock.Controller
+	recorder *MockLoggerMockRecorder
+}
+
+// MockLoggerMockRecorder is the mock recorder for MockLogger
+type MockLoggerMockRecorder struct {
+	mock *MockLogger
+}
+
+// NewMockLogger creates a new mock instance
+func NewMockLogger(ctrl *gomock.Controller) *MockLogger {
+	mock := &MockLogger{ctrl: ctrl}
+	mock.recorder = &MockLoggerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockLogger) EXPECT() *MockLoggerMockRecorder {
+	return m.recorder
+}
+
+// Info mocks base method
+func (m *MockLogger) Info(format string, args ...interface{}) {
+	varargs := []interface{}{format}
+	for _, a := range args {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "Info", varargs...)
+}
+
+// Info indicates an expected call of Info
+func (mr *MockLoggerMockRecorder) Info(format interface{}, args ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{format}, args...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockLogger)(nil).Info), varargs...)
+}
+
 // MockPkgManager is a mock of PkgManager interface
 type MockPkgManager struct {
 	ctrl     *gomock.Controller

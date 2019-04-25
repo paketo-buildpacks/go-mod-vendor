@@ -1,6 +1,7 @@
 package mod_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -65,17 +66,21 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 	when("Contribute", func() {
 		it("runs `go install`, gets app name and contributes the start command", func() {
 			factory.AddBuildPlan(mod.Dependency, buildplan.Dependency{})
+			layer := factory.Build.Layers.Layer(mod.Dependency)
+			proc := filepath.Join(layer.Root, "bin", appName)
+
 			contributor, willCont, err := mod.NewContributor(factory.Build, mockRunner)
 			Expect(willCont).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 
-			mockRunner.EXPECT().Run("go", appRoot, false, "build", "-buildmode", "pie", "-tags", "cloudfoundry").Return(nil)
+			mockRunner.EXPECT().SetEnv("GOPATH", layer.Root)
+			mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Return(nil)
 			mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
 			Expect(contributor.Contribute()).To(Succeed())
-			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", "./" + appName}}}))
 
-			layer := factory.Build.Layers.Layer(mod.Dependency)
-			Expect(layer).To(test.HaveLayerMetadata(false, false, false))
+			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", proc}}}))
+
+			Expect(layer).To(test.HaveLayerMetadata(false, true, true))
 		})
 	})
 }
