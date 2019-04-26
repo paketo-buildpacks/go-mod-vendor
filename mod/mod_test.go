@@ -1,8 +1,11 @@
 package mod_test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
@@ -58,6 +61,7 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 
 		it("returns false if a build plan does not exist", func() {
 			_, willContribute, err := mod.NewContributor(factory.Build, mockRunner)
+
 			Expect(err).NotTo(HaveOccurred())
 			Expect(willContribute).To(BeFalse())
 		})
@@ -71,14 +75,16 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 			buildPath := filepath.Join(goModLayer.Root, "bin", appName)
 			launchPath := filepath.Join(launchLayer.Root, appName)
 
+			mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
 			contributor, willCont, err := mod.NewContributor(factory.Build, mockRunner)
 			Expect(willCont).To(BeTrue())
 			Expect(err).NotTo(HaveOccurred())
 
 			mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
-			mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Return(nil)
-			mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
-			mockRunner.EXPECT().Rename(buildPath, launchPath).Return(nil)
+			mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Do(func(_ ...interface{}) {
+				Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+			})
+
 			Expect(contributor.Contribute()).To(Succeed())
 
 			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}}))
