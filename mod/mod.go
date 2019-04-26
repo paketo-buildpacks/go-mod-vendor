@@ -9,12 +9,14 @@ import (
 
 const (
 	Dependency = "go-mod"
+	Launch     = "go-binary"
 )
 
 type Runner interface {
 	Run(bin, dir string, quiet bool, args ...string) error
 	RunWithOutput(bin, dir string, quiet bool, args ...string) (string, error)
 	SetEnv(variableName string, path string) error
+	Rename(existingPath string, newPath string) error
 }
 
 type Logger interface {
@@ -41,6 +43,7 @@ func (m Metadata) Identity() (name string, version string) {
 type Contributor struct {
 	goModMetadata MetadataInterface
 	goModLayer    layers.Layer
+	launchLayer   layers.Layer
 	runner        Runner
 	appRoot       string
 	logger        Logger
@@ -55,6 +58,7 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 
 	contributor := Contributor{
 		goModLayer:    context.Layers.Layer(Dependency),
+		launchLayer:   context.Layers.Layer(Launch),
 		goModMetadata: nil,
 		runner:        runner,
 		appRoot:       context.Application.Root,
@@ -66,11 +70,15 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 }
 
 func (c Contributor) Contribute() error {
-	if err := c.goModLayer.Contribute(c.goModMetadata, c.contributeGoModules, c.flags()...); err != nil {
+	if err := c.goModLayer.Contribute(c.goModMetadata, c.contributeGoModules, []layers.Flag{layers.Cache}...); err != nil {
 		return err
 	}
 
 	if err := c.Install(); err != nil {
+		return err
+	}
+
+	if err := c.launchLayer.Contribute(c.goModMetadata, c.contributeGoModules, []layers.Flag{layers.Launch}...); err != nil {
 		return err
 	}
 
@@ -79,11 +87,6 @@ func (c Contributor) Contribute() error {
 
 func (c Contributor) contributeGoModules(layer layers.Layer) error {
 	return nil
-}
-
-func (c Contributor) flags() []layers.Flag {
-	flags := []layers.Flag{layers.Cache, layers.Launch}
-	return flags
 }
 
 func (c Contributor) Install() error {
@@ -114,7 +117,12 @@ func (c Contributor) setStartCommand() error {
 	if err != nil {
 		return err
 	}
+	buildPath := filepath.Join(c.goModLayer.Root, "bin", appName)
+	launchPath := filepath.Join(c.launchLayer.Root, appName)
 
-	proc := filepath.Join(c.goModLayer.Root, "bin", appName)
-	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", proc}}})
+	if err := c.runner.Rename(buildPath, launchPath); err != nil {
+		return err
+	}
+
+	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}})
 }

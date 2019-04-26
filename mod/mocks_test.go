@@ -79,6 +79,18 @@ func (mr *MockRunnerMockRecorder) SetEnv(variableName, path interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEnv", reflect.TypeOf((*MockRunner)(nil).SetEnv), variableName, path)
 }
 
+// Rename mocks base method
+func (m *MockRunner) Rename(existingPath, newPath string) error {
+	ret := m.ctrl.Call(m, "Rename", existingPath, newPath)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Rename indicates an expected call of Rename
+func (mr *MockRunnerMockRecorder) Rename(existingPath, newPath interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Rename", reflect.TypeOf((*MockRunner)(nil).Rename), existingPath, newPath)
+}
+
 // MockLogger is a mock of Logger interface
 type MockLogger struct {
 	ctrl     *gomock.Controller

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -44,4 +45,12 @@ func (c Command) RunWithOutput(bin, dir string, quiet bool, args ...string) (str
 
 func (c Command) SetEnv(variableName string, path string) error {
 	return os.Setenv(variableName, path)
+}
+
+func (c Command) Rename(existingPath string, newPath string) error {
+	newDir := filepath.Dir(newPath)
+	if err := os.MkdirAll(newDir, os.ModePerm); err != nil {
+		return err
+	}
+	return os.Rename(existingPath, newPath)
 }
