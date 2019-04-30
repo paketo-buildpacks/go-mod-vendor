@@ -1,8 +1,10 @@
 package mod
 
 import (
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -94,8 +96,15 @@ func (c Contributor) ContributeGoModules(_ layers.Layer) error {
 		return err
 	}
 
+	args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
+	if exists, err := helper.FileExists(filepath.Join(c.appRoot, "vendor")); err != nil {
+		return err
+	} else if exists {
+		args = append(args, "-mod=vendor")
+	}
+
 	c.logger.Info("Running `go install`")
-	if err := c.runner.Run("go", c.appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry"); err != nil {
+	if err := c.runner.Run("go", c.appRoot, false, args...); err != nil {
 		return err
 	}
 
@@ -115,15 +124,18 @@ func (c Contributor) ContributeBinLayer(binLayer layers.Layer) error {
 	return os.Rename(oldBinPath, newBinPath)
 }
 
+type Module struct {
+	Path  string `json:"Path"`
+}
+
 func (c *Contributor) setAppName() error {
-	appName, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
+	output, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
 	if err != nil {
 		return err
 	}
 
-	c.appName = appName
+	c.appName = sanitizeOutput(output)
 	return nil
-
 }
 
 func (c Contributor) setStartCommand() error {
@@ -131,4 +143,9 @@ func (c Contributor) setStartCommand() error {
 	launchPath := filepath.Join(c.launchLayer.Root, c.appName)
 
 	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}})
+}
+
+func sanitizeOutput(output string) string {
+	lines := strings.Split(output, "\n")
+	return lines[len(lines) - 1]
 }

@@ -17,14 +17,20 @@ func TestIntegration(t *testing.T) {
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	var (
+		app *dagger.App
+		err error
 		packageBuildpack string
 		goBuildpack      string
 	)
 
+	const (
+		goFinding = "go: finding github.com/"
+		goDownloading = "go: downloading github.com/"
+		goExtracting = "go: extracting github.com/"
+	)
+
 	it.Before(func() {
 		RegisterTestingT(t)
-
-		var err error
 
 		packageBuildpack, err = dagger.PackageBuildpack()
 		Expect(err).ToNot(HaveOccurred())
@@ -33,10 +39,13 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	it.After(func() {
+		app.Destroy()
+	})
+
 	it("should build a working OCI image for a simple app", func() {
-		app, err := dagger.PackBuild(filepath.Join("testdata", "simple_app"), goBuildpack, packageBuildpack)
+		app, err = dagger.PackBuild(filepath.Join("testdata", "simple_app"), goBuildpack, packageBuildpack)
 		Expect(err).ToNot(HaveOccurred())
-		defer app.Destroy()
 
 		Expect(app.Start()).To(Succeed())
 
@@ -47,13 +56,12 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	when("the app is pushed twice", func() {
 		it("does not reinstall go modules", func() {
 			appDir := filepath.Join("testdata", "simple_app")
-			app, err := dagger.PackBuild(appDir, goBuildpack, packageBuildpack)
+			app, err = dagger.PackBuild(appDir, goBuildpack, packageBuildpack)
 			Expect(err).ToNot(HaveOccurred())
-			defer app.Destroy()
 
-			Expect(app.BuildLogs()).To(MatchRegexp("go: finding github.com/"))
-			Expect(app.BuildLogs()).To(MatchRegexp("go: downloading github.com/"))
-			Expect(app.BuildLogs()).To(MatchRegexp("go: extracting github.com/"))
+			Expect(app.BuildLogs()).To(MatchRegexp(goFinding))
+			Expect(app.BuildLogs()).To(MatchRegexp(goDownloading))
+			Expect(app.BuildLogs()).To(MatchRegexp(goExtracting))
 
 			_, imageID, _, err := app.Info()
 			Expect(err).NotTo(HaveOccurred())
@@ -62,14 +70,28 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			repeatBuildLogs := app.BuildLogs()
-			Expect(repeatBuildLogs).NotTo(MatchRegexp("go: finding github.com/"))
-			Expect(repeatBuildLogs).NotTo(MatchRegexp("go: downloading github.com/"))
-			Expect(repeatBuildLogs).NotTo(MatchRegexp("go: extracting github.com/"))
+			Expect(repeatBuildLogs).NotTo(MatchRegexp(goFinding))
+			Expect(repeatBuildLogs).NotTo(MatchRegexp(goDownloading))
+			Expect(repeatBuildLogs).NotTo(MatchRegexp(goExtracting))
 
 			Expect(app.Start()).To(Succeed())
 
 			_, _, err = app.HTTPGet("/")
 			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	when("the app is vendored", func() {
+		it("builds an OCI image without downloading any extra packages", func() {
+			appDir := filepath.Join("testdata", "vendored")
+			app, err = dagger.PackBuild(appDir, goBuildpack, packageBuildpack)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(app.BuildLogs()).NotTo(MatchRegexp(goDownloading))
+
+			Expect(app.Start()).To(Succeed())
+			_, _, err = app.HTTPGet("/")
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 }
