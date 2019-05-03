@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -11,17 +12,31 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var (
+	bpDir, goURI, goModURI string
+)
+
 func TestIntegration(t *testing.T) {
+	var err error
+	Expect := NewWithT(t).Expect
+	bpDir, err = dagger.FindBPRoot()
+	Expect(err).NotTo(HaveOccurred())
+	goModURI, err = dagger.PackageBuildpack(bpDir)
+	Expect(err).ToNot(HaveOccurred())
+	defer os.RemoveAll(goModURI)
+
+	goURI, err = dagger.GetLatestBuildpack("go-cnb")
+	Expect(err).ToNot(HaveOccurred())
+	defer os.RemoveAll(goURI)
+
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
-	var (
-		app *dagger.App
-		err error
-		packageBuildpack string
-		goBuildpack      string
-	)
+	var Expect func(interface{}, ...interface{}) GomegaAssertion
+	it.Before(func() {
+		Expect = NewWithT(t).Expect
+	})
 
 	const (
 		goFinding = "go: finding github.com/"
@@ -29,23 +44,10 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		goExtracting = "go: extracting github.com/"
 	)
 
-	it.Before(func() {
-		RegisterTestingT(t)
-
-		packageBuildpack, err = dagger.PackageBuildpack()
-		Expect(err).ToNot(HaveOccurred())
-
-		goBuildpack, err = dagger.GetLatestBuildpack("go-cnb")
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	it.After(func() {
-		app.Destroy()
-	})
-
 	it("should build a working OCI image for a simple app", func() {
-		app, err = dagger.PackBuild(filepath.Join("testdata", "simple_app"), goBuildpack, packageBuildpack)
+		app, err := dagger.PackBuild(filepath.Join("testdata", "simple_app"), goURI, goModURI)
 		Expect(err).ToNot(HaveOccurred())
+		defer app.Destroy()
 
 		Expect(app.Start()).To(Succeed())
 
@@ -56,8 +58,9 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	when("the app is pushed twice", func() {
 		it("does not reinstall go modules", func() {
 			appDir := filepath.Join("testdata", "simple_app")
-			app, err = dagger.PackBuild(appDir, goBuildpack, packageBuildpack)
+			app, err := dagger.PackBuild(appDir, goURI, goModURI)
 			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
 
 			Expect(app.BuildLogs()).To(MatchRegexp(goFinding))
 			Expect(app.BuildLogs()).To(MatchRegexp(goDownloading))
@@ -66,7 +69,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			_, imageID, _, err := app.Info()
 			Expect(err).NotTo(HaveOccurred())
 
-			app, err = dagger.PackBuildNamedImage(imageID, appDir, goBuildpack, packageBuildpack)
+			app, err = dagger.PackBuildNamedImage(imageID, appDir, goURI, goModURI)
 			Expect(err).ToNot(HaveOccurred())
 
 			repeatBuildLogs := app.BuildLogs()
@@ -84,7 +87,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	when("the app is vendored", func() {
 		it("builds an OCI image without downloading any extra packages", func() {
 			appDir := filepath.Join("testdata", "vendored")
-			app, err = dagger.PackBuild(appDir, goBuildpack, packageBuildpack)
+			app, err := dagger.PackBuild(appDir, goURI, goModURI)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(app.BuildLogs()).NotTo(MatchRegexp(goDownloading))
