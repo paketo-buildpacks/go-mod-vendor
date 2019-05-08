@@ -1,3 +1,6 @@
+.DS_Store
+.idea
 .bin
 *.tgz
 go-mod-cnb_*
+bin/

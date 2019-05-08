@@ -4,5 +4,9 @@ id = "org.cloudfoundry.go-mod"
 name = "Go Mod Buildpack"
 version = "0.0.2"
 
+[metadata]
+include_files = ["bin/build","bin/detect","buildpack.toml"]
+pre_package = "./scripts/build.sh"
+
 [[stacks]]
 id = "org.cloudfoundry.stacks.cflinuxfs3"

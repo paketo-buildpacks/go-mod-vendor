@@ -3,8 +3,6 @@ package main
 import (
 	"testing"
 
-	. "github.com/onsi/gomega"
-
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/test"
 	"github.com/google/go-cmp/cmp"
@@ -20,7 +18,6 @@ func testBuild(t *testing.T, _ spec.G, it spec.S) {
 	var factory *test.BuildFactory
 
 	it.Before(func() {
-		RegisterTestingT(t)
 		factory = test.NewBuildFactory(t)
 	})
 

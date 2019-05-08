@@ -14,7 +14,6 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/test"
 
 	"github.com/golang/mock/gomock"
-	_ "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/cloudfoundry/go-mod-cnb/mod"
