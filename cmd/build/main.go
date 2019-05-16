@@ -4,14 +4,19 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/buildpack/libbuildpack/buildplan"
+
 	"github.com/cloudfoundry/go-mod-cnb/utils"
 
 	"github.com/cloudfoundry/go-mod-cnb/mod"
 
-	"github.com/buildpack/libbuildpack/buildplan"
-
 	"github.com/cloudfoundry/libcfbuildpack/build"
 )
+
+type GoModContributor interface {
+	Contribute() error
+	Cleanup() error
+}
 
 func main() {
 	context, err := build.DefaultBuild()
@@ -20,29 +25,30 @@ func main() {
 		os.Exit(101)
 	}
 
-	code, err := runBuild(context)
+	runner := utils.Command{}
+	var goModContributor GoModContributor = mod.NewContributor(context, runner)
+	code, err := runBuild(context, goModContributor)
 	if err != nil {
 		context.Logger.Info(err.Error())
 	}
 
 	os.Exit(code)
-
 }
 
-func runBuild(context build.Build) (int, error) {
+func runBuild(context build.Build, goModContributor GoModContributor) (int, error) {
 	context.Logger.FirstLine(context.Logger.PrettyIdentity(context.Buildpack))
 
-	runner := utils.Command{}
-
-	goModContributor, willContribute, err := mod.NewContributor(context, runner)
-	if err != nil {
-		return context.Failure(102), err
+	_, wantDependency := context.BuildPlan[mod.Dependency]
+	if !wantDependency {
+		return context.Failure(102), nil
 	}
 
-	if willContribute {
-		if err := goModContributor.Contribute(); err != nil {
-			return context.Failure(103), err
-		}
+	if err := goModContributor.Contribute(); err != nil {
+		return context.Failure(103), err
+	}
+
+	if err := goModContributor.Cleanup(); err != nil {
+		return context.Failure(104), err
 	}
 
 	return context.Success(buildplan.BuildPlan{})

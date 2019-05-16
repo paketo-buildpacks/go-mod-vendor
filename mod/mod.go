@@ -1,10 +1,11 @@
 package mod
 
 import (
-	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -54,13 +55,8 @@ type Contributor struct {
 	appName       string
 }
 
-func NewContributor(context build.Build, runner Runner) (Contributor, bool, error) {
-	_, wantDependency := context.BuildPlan[Dependency]
-	if !wantDependency {
-		return Contributor{}, false, nil
-	}
-
-	contributor := Contributor{
+func NewContributor(context build.Build, runner Runner) Contributor {
+	return Contributor{
 		goModLayer:    context.Layers.Layer(Dependency),
 		launchLayer:   context.Layers.Layer(Launch),
 		goModMetadata: nil,
@@ -70,8 +66,6 @@ func NewContributor(context build.Build, runner Runner) (Contributor, bool, erro
 		logger:        context.Logger,
 		launch:        context.Layers,
 	}
-
-	return contributor, true, nil
 }
 
 func (c Contributor) Contribute() error {
@@ -124,8 +118,23 @@ func (c Contributor) ContributeBinLayer(binLayer layers.Layer) error {
 	return os.Rename(oldBinPath, newBinPath)
 }
 
+func (c Contributor) Cleanup() error {
+	contents, err := filepath.Glob(filepath.Join(c.appRoot, "*"))
+	if err != nil {
+		return err
+	}
+
+	for _, file := range contents {
+		if err := os.RemoveAll(file); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type Module struct {
-	Path  string `json:"Path"`
+	Path string `json:"Path"`
 }
 
 func (c *Contributor) setAppName() error {
@@ -147,5 +156,5 @@ func (c Contributor) setStartCommand() error {
 
 func sanitizeOutput(output string) string {
 	lines := strings.Split(output, "\n")
-	return lines[len(lines) - 1]
+	return lines[len(lines)-1]
 }

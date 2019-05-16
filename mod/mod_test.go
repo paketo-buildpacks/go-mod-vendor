@@ -1,6 +1,7 @@
 package mod_test
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,10 +32,15 @@ func TestUnitGoMod(t *testing.T) {
 
 func testGoMod(t *testing.T, when spec.G, it spec.S) {
 	var (
-		mockCtrl   *gomock.Controller
-		factory    *test.BuildFactory
-		mockRunner *MockRunner
-		appRoot    string
+		mockCtrl    *gomock.Controller
+		factory     *test.BuildFactory
+		mockRunner  *MockRunner
+		appRoot     string
+		buildPath   string
+		launchPath  string
+		goModLayer  layers.Layer
+		launchLayer layers.Layer
+		contributor mod.Contributor
 	)
 
 	it.Before(func() {
@@ -49,34 +55,7 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 		mockCtrl.Finish()
 	})
 
-	when("NewContributor", func() {
-		it("returns true if it exists in the build plan", func() {
-			factory.AddBuildPlan(mod.Dependency, buildplan.Dependency{})
-
-			_, willContribute, err := mod.NewContributor(factory.Build, mockRunner)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(willContribute).To(BeTrue())
-		})
-
-		it("returns false if a build plan does not exist", func() {
-			_, willContribute, err := mod.NewContributor(factory.Build, mockRunner)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(willContribute).To(BeFalse())
-		})
-	})
-
 	when("Contribute", func() {
-		var (
-			buildPath   string
-			launchPath  string
-			goModLayer  layers.Layer
-			launchLayer layers.Layer
-			contributor mod.Contributor
-			willCont    bool
-			err         error
-		)
-
 		it.Before(func() {
 			factory.AddBuildPlan(mod.Dependency, buildplan.Dependency{})
 			goModLayer = factory.Build.Layers.Layer(mod.Dependency)
@@ -84,9 +63,7 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 			buildPath = filepath.Join(goModLayer.Root, "bin", appName)
 			launchPath = filepath.Join(launchLayer.Root, appName)
 
-			contributor, willCont, err = mod.NewContributor(factory.Build, mockRunner)
-			Expect(willCont).To(BeTrue())
-			Expect(err).NotTo(HaveOccurred())
+			contributor = mod.NewContributor(factory.Build, mockRunner)
 		})
 
 		it.After(func() {
@@ -126,6 +103,21 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 
 				Expect(contributor.Contribute()).To(Succeed())
 			})
+		})
+
+	})
+
+	when("Cleanup", func() {
+		it("removes the contents of the app dir", func() {
+			dummyFile := filepath.Join(factory.Build.Application.Root, "dummy")
+			Expect(ioutil.WriteFile(dummyFile, []byte("baller"), 0777))
+
+			contributor = mod.NewContributor(factory.Build, mockRunner)
+
+			Expect(contributor.Cleanup()).To(Succeed())
+			appDirContents, err := ioutil.ReadDir(factory.Build.Application.Root)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(appDirContents).To(BeEmpty())
 		})
 	})
 }
