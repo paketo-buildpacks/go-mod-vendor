@@ -91,10 +91,19 @@ func (c Contributor) ContributeGoModules(_ layers.Layer) error {
 	}
 
 	args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
+
 	if exists, err := helper.FileExists(filepath.Join(c.appRoot, "vendor")); err != nil {
 		return err
 	} else if exists {
 		args = append(args, "-mod=vendor")
+	}
+
+	targets, err := c.determineTargets()
+	if err != nil {
+		return err
+	}
+	for _, target := range targets {
+		args = append(args, target)
 	}
 
 	c.logger.Info("Running `go install`")
@@ -157,4 +166,13 @@ func (c Contributor) setStartCommand() error {
 func sanitizeOutput(output string) string {
 	lines := strings.Split(output, "\n")
 	return lines[len(lines)-1]
+}
+
+func (c Contributor) determineTargets() ([]string, error) {
+	if buildTarget := os.Getenv("BP_GO_MOD_TARGETS"); buildTarget != "" {
+		targets := strings.Split(buildTarget, ":")
+		return targets, nil
+	}
+
+	return []string{}, nil
 }
