@@ -1,11 +1,13 @@
 package mod
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -168,11 +170,36 @@ func sanitizeOutput(output string) string {
 	return lines[len(lines)-1]
 }
 
+type Config struct {
+	GoMod GoModConfig `yaml:"go-mod"`
+}
+
+type GoModConfig struct {
+	Targets []string `yaml:"targets"`
+}
+
 func (c Contributor) determineTargets() ([]string, error) {
 	if buildTarget := os.Getenv("BP_GO_MOD_TARGETS"); buildTarget != "" {
 		targets := strings.Split(buildTarget, ":")
 		return targets, nil
 	}
 
-	return []string{}, nil
+	configPath := filepath.Join(c.appRoot, "buildpack.yml")
+	config := Config{}
+	if _, err := os.Stat(configPath); err == nil {
+		yamlFile, err := ioutil.ReadFile(configPath)
+		if err != nil {
+			return []string{}, err
+		}
+		err = yaml.Unmarshal(yamlFile, &config)
+		if err != nil {
+			return []string{}, err
+		}
+	}
+
+	if len(config.GoMod.Targets) < 1 {
+		return []string{}, nil
+	}
+
+	return config.GoMod.Targets, nil
 }

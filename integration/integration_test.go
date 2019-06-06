@@ -39,9 +39,9 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	const (
-		goFinding = "go: finding github.com/"
+		goFinding     = "go: finding github.com/"
 		goDownloading = "go: downloading github.com/"
-		goExtracting = "go: extracting github.com/"
+		goExtracting  = "go: extracting github.com/"
 	)
 
 	it("should build a working OCI image for a simple app", func() {
@@ -97,4 +97,18 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
+
+	when("the app target is not at the root of the directory", func() {
+		it("should build a working OCI image for a simple app", func() {
+			app, err := dagger.PackBuild(filepath.Join("testdata", "non_root_target"), goURI, goModURI)
+			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
+
+			Expect(app.Start()).To(Succeed())
+
+			_, _, err = app.HTTPGet("/")
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
 }

@@ -110,6 +110,25 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 					})
 				})
 
+				when("buildpack.yml config file is present", func() {
+					it("runs `go install`, gets app name and contributes the start command", func() {
+						Expect(ioutil.WriteFile(filepath.Join(appRoot, "buildpack.yml"),
+							[]byte(`---
+go-mod:
+  targets: ["./path/to/my"]`),
+							os.FileMode(0600))).To(Succeed())
+
+						mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
+
+						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+
+						mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/my").Do(func(_ ...interface{}) {
+							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+						})
+
+						Expect(contributor.Contribute()).To(Succeed())
+					})
+				})
 			})
 		})
 
