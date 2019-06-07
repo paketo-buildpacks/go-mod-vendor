@@ -55,6 +55,7 @@ type Contributor struct {
 	logger        Logger
 	launch        layers.Layers
 	appName       string
+	targets		  []string
 }
 
 func NewContributor(context build.Build, runner Runner) Contributor {
@@ -71,6 +72,12 @@ func NewContributor(context build.Build, runner Runner) Contributor {
 }
 
 func (c Contributor) Contribute() error {
+	targets, err := c.determineTargets()
+	if err != nil {
+		return err
+	}
+	c.targets = targets
+
 	if err := c.goModLayer.Contribute(c.goModMetadata, c.ContributeGoModules, []layers.Flag{layers.Cache}...); err != nil {
 		return err
 	}
@@ -100,11 +107,7 @@ func (c Contributor) ContributeGoModules(_ layers.Layer) error {
 		args = append(args, "-mod=vendor")
 	}
 
-	targets, err := c.determineTargets()
-	if err != nil {
-		return err
-	}
-	for _, target := range targets {
+	for _, target := range c.targets {
 		args = append(args, target)
 	}
 
@@ -149,12 +152,19 @@ type Module struct {
 }
 
 func (c *Contributor) setAppName() error {
-	output, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
-	if err != nil {
-		return err
+	if len(c.targets) != 0 {
+		targetSegments := strings.Split(c.targets[0], "/")
+		appName := targetSegments[len(targetSegments)-1]
+		c.appName = appName
+	} else {
+		output, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
+		if err != nil {
+			return err
+		}
+
+		c.appName = parseAppNameFromOutput(output)
 	}
 
-	c.appName = sanitizeOutput(output)
 	return nil
 }
 
@@ -163,6 +173,12 @@ func (c Contributor) setStartCommand() error {
 	launchPath := filepath.Join(c.launchLayer.Root, c.appName)
 
 	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}})
+}
+
+func parseAppNameFromOutput(output string) string {
+	sanitizedOutput := sanitizeOutput(output)
+	moduleNamePaths := strings.Split(sanitizedOutput, "/")
+	return moduleNamePaths[len(moduleNamePaths)-1]
 }
 
 func sanitizeOutput(output string) string {

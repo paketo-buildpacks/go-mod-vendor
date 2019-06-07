@@ -1,4 +1,4 @@
-module site
+module github.com/pivotal/go-test
 
 // go: no requirements found in Godeps/Godeps.json
 //
