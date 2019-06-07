@@ -1,4 +1,4 @@
-module github.com/pivotal/go-test
+module github.com/cloudfoundry/go-online
 
 // go: no requirements found in Godeps/Godeps.json
 //
