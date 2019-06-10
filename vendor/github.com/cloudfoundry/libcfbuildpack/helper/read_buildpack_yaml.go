@@ -14,26 +14,33 @@
  * limitations under the License.
  */
 
-package buildpack
+package helper
 
 import (
-	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
-// License represents a license that a Dependency is distributed under.  At least one of Name or URI MUST be specified.
-type License struct {
-	// Type is the type of the license.  This is typically the SPDX short identifier.
-	Type string `mapstruct:"type" toml:"type"`
 
-	// URI is the location where the license can be found.
-	URI string `mapstruct:"uri" toml:"uri"`
+type BuildpackYaml map[string] struct {
+		Version string `yaml:"version"`
 }
 
-// Validate ensures that license has at least one of type or uri
-func (l License) Validate() error {
-	if "" == l.Type && "" == l.URI {
-		return fmt.Errorf("license must have at least one of type or uri")
+
+func ReadBuildpackYamlVersion(buildpackYAMLPath, language string) (string, error) {
+	buf, err := ioutil.ReadFile(buildpackYAMLPath)
+	if err != nil {
+		return "", err
 	}
 
-	return nil
+	config := BuildpackYaml{}
+	if err := yaml.Unmarshal(buf, &config); err != nil {
+		return "", err
+	}
+
+	lang, ok := config[language]
+	if !ok {
+		return "", nil
+	}
+	return lang.Version, nil
 }
