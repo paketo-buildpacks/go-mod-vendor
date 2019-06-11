@@ -55,7 +55,7 @@ type Contributor struct {
 	logger        Logger
 	launch        layers.Layers
 	appName       string
-	targets		  []string
+	targets       []string
 }
 
 func NewContributor(context build.Build, runner Runner) Contributor {
@@ -187,15 +187,13 @@ func sanitizeOutput(output string) string {
 }
 
 type Config struct {
-	GoMod GoModConfig `yaml:"go-mod"`
-}
-
-type GoModConfig struct {
-	Targets []string `yaml:"targets"`
+	Go struct {
+		Targets []string `yaml:"targets"`
+	} `yaml:"go"`
 }
 
 func (c Contributor) determineTargets() ([]string, error) {
-	if buildTarget := os.Getenv("BP_GO_MOD_TARGETS"); buildTarget != "" {
+	if buildTarget := os.Getenv("BP_GO_TARGETS"); buildTarget != "" {
 		targets := strings.Split(buildTarget, ":")
 		return targets, nil
 	}
@@ -205,17 +203,17 @@ func (c Contributor) determineTargets() ([]string, error) {
 	if _, err := os.Stat(configPath); err == nil {
 		yamlFile, err := ioutil.ReadFile(configPath)
 		if err != nil {
-			return []string{}, err
+			return nil, err
 		}
 		err = yaml.Unmarshal(yamlFile, &config)
 		if err != nil {
-			return []string{}, err
+			return nil, err
 		}
 	}
 
-	if len(config.GoMod.Targets) < 1 {
+	if len(config.Go.Targets) < 1 {
 		return []string{}, nil
 	}
 
-	return config.GoMod.Targets, nil
+	return config.Go.Targets, nil
 }
