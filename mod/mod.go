@@ -1,11 +1,13 @@
 package mod
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
+	"gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -53,6 +55,7 @@ type Contributor struct {
 	logger        Logger
 	launch        layers.Layers
 	appName       string
+	targets       []string
 }
 
 func NewContributor(context build.Build, runner Runner) Contributor {
@@ -69,6 +72,12 @@ func NewContributor(context build.Build, runner Runner) Contributor {
 }
 
 func (c Contributor) Contribute() error {
+	targets, err := c.determineTargets()
+	if err != nil {
+		return err
+	}
+	c.targets = targets
+
 	if err := c.goModLayer.Contribute(c.goModMetadata, c.ContributeGoModules, []layers.Flag{layers.Cache}...); err != nil {
 		return err
 	}
@@ -91,10 +100,15 @@ func (c Contributor) ContributeGoModules(_ layers.Layer) error {
 	}
 
 	args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
+
 	if exists, err := helper.FileExists(filepath.Join(c.appRoot, "vendor")); err != nil {
 		return err
 	} else if exists {
 		args = append(args, "-mod=vendor")
+	}
+
+	for _, target := range c.targets {
+		args = append(args, target)
 	}
 
 	c.logger.Info("Running `go install`")
@@ -138,12 +152,19 @@ type Module struct {
 }
 
 func (c *Contributor) setAppName() error {
-	output, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
-	if err != nil {
-		return err
+	if len(c.targets) != 0 {
+		targetSegments := strings.Split(c.targets[0], "/")
+		appName := targetSegments[len(targetSegments)-1]
+		c.appName = appName
+	} else {
+		output, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
+		if err != nil {
+			return err
+		}
+
+		c.appName = parseAppNameFromOutput(output)
 	}
 
-	c.appName = sanitizeOutput(output)
 	return nil
 }
 
@@ -154,7 +175,45 @@ func (c Contributor) setStartCommand() error {
 	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}})
 }
 
+func parseAppNameFromOutput(output string) string {
+	sanitizedOutput := sanitizeOutput(output)
+	moduleNamePaths := strings.Split(sanitizedOutput, "/")
+	return moduleNamePaths[len(moduleNamePaths)-1]
+}
+
 func sanitizeOutput(output string) string {
 	lines := strings.Split(output, "\n")
 	return lines[len(lines)-1]
+}
+
+type Config struct {
+	Go struct {
+		Targets []string `yaml:"targets"`
+	} `yaml:"go"`
+}
+
+func (c Contributor) determineTargets() ([]string, error) {
+	if buildTarget := os.Getenv("BP_GO_TARGETS"); buildTarget != "" {
+		targets := strings.Split(buildTarget, ":")
+		return targets, nil
+	}
+
+	configPath := filepath.Join(c.appRoot, "buildpack.yml")
+	config := Config{}
+	if _, err := os.Stat(configPath); err == nil {
+		yamlFile, err := ioutil.ReadFile(configPath)
+		if err != nil {
+			return nil, err
+		}
+		err = yaml.Unmarshal(yamlFile, &config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(config.Go.Targets) < 1 {
+		return []string{}, nil
+	}
+
+	return config.Go.Targets, nil
 }

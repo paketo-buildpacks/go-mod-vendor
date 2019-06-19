@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
 	"github.com/buildpack/libbuildpack/buildplan"
+	"github.com/buildpack/libbuildpack/platform"
 
 	"github.com/cloudfoundry/libcfbuildpack/test"
 
@@ -67,6 +68,10 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		it.After(func() {
+			if os.Getenv("BP_GO_TARGETS") != "" {
+				os.Unsetenv("BP_GO_TARGETS")
+			}
+
 			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}}))
 
 			Expect(goModLayer).To(test.HaveLayerMetadata(false, true, false))
@@ -84,6 +89,48 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 				})
 
 				Expect(contributor.Contribute()).To(Succeed())
+			})
+
+			when("the target is not at the root directory", func() {
+				it.Before(func() {
+					buildPath = filepath.Join(goModLayer.Root, "bin", "first")
+					launchPath = filepath.Join(launchLayer.Root, "first")
+				})
+
+				when("`BP_GO_TARGETS` environment variable is set", func() {
+					it("runs `go install`, gets app name and contributes the start command", func() {
+						factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
+							"BP_GO_TARGETS": "./path/to/first:./path/to/second",
+						}
+						factory.Build.Platform.EnvironmentVariables.SetAll()
+
+						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+
+						mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first", "./path/to/second").Do(func(_ ...interface{}) {
+							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+						})
+
+						Expect(contributor.Contribute()).To(Succeed())
+					})
+				})
+
+				when("buildpack.yml config file is present", func() {
+					it("runs `go install`, gets app name and contributes the start command", func() {
+						Expect(ioutil.WriteFile(filepath.Join(appRoot, "buildpack.yml"),
+							[]byte(`---
+go:
+  targets: ["./path/to/first"]`),
+							os.FileMode(0666))).To(Succeed())
+
+						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+
+						mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first").Do(func(_ ...interface{}) {
+							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+						})
+
+						Expect(contributor.Contribute()).To(Succeed())
+					})
+				})
 			})
 		})
 
@@ -104,7 +151,6 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 				Expect(contributor.Contribute()).To(Succeed())
 			})
 		})
-
 	})
 
 	when("Cleanup", func() {

@@ -8,10 +8,10 @@ github.com/buildpack/libbuildpack/internal
 github.com/buildpack/libbuildpack/build
 github.com/buildpack/libbuildpack/layers
 github.com/buildpack/libbuildpack/detect
+github.com/buildpack/libbuildpack/platform
 github.com/buildpack/libbuildpack/application
 github.com/buildpack/libbuildpack/buildpack
 github.com/buildpack/libbuildpack/logger
-github.com/buildpack/libbuildpack/platform
 github.com/buildpack/libbuildpack/services
 github.com/buildpack/libbuildpack/stack
 # github.com/cloudfoundry/dagger v0.0.0-20190618191508-11a2fd493334
