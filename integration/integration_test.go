@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -23,11 +22,11 @@ func TestIntegration(t *testing.T) {
 	Expect(err).NotTo(HaveOccurred())
 	goModURI, err = dagger.PackageBuildpack(bpDir)
 	Expect(err).ToNot(HaveOccurred())
-	defer os.RemoveAll(goModURI)
+	defer dagger.DeleteBuildpack(goModURI)
 
 	goURI, err = dagger.GetLatestBuildpack("go-cnb")
 	Expect(err).ToNot(HaveOccurred())
-	defer os.RemoveAll(goURI)
+	defer dagger.DeleteBuildpack(goURI)
 
 	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
 }

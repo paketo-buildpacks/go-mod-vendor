@@ -3,4 +3,5 @@
 .bin
 *.tgz
 go-mod-cnb_*
-bin/
+/bin/
+/buildpack.toml
