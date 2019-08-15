@@ -22,11 +22,6 @@ func main() {
 		os.Exit(100)
 	}
 
-	if err := context.BuildPlan.Init(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "Failed to initialize Build Plan: %s\n", err)
-		os.Exit(101)
-	}
-
 	code, err := runDetect(context)
 	if err != nil {
 		context.Logger.Info(err.Error())
@@ -43,11 +38,14 @@ func runDetect(context detect.Detect) (int, error) {
 		return detect.FailStatusCode, fmt.Errorf(`no "go.mod" found at: %s`, goModFile)
 	}
 
-	return context.Pass(buildplan.BuildPlan{
-		mod.Dependency: buildplan.Dependency{
+	return context.Pass(buildplan.Plan{
+		Provides: []buildplan.Provided{{Name: mod.Dependency}},
+		Requires: []buildplan.Required{{
+			Name: mod.Dependency,
 			Metadata: buildplan.Metadata{
 				"build": true,
 			},
-		},
+		}},
 	})
+
 }

@@ -6,11 +6,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 
-	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/buildpack/libbuildpack/platform"
 
 	"github.com/cloudfoundry/libcfbuildpack/test"
@@ -58,7 +59,7 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 
 	when("Contribute", func() {
 		it.Before(func() {
-			factory.AddBuildPlan(mod.Dependency, buildplan.Dependency{})
+			factory.AddPlan(buildpackplan.Plan{Name: mod.Dependency})
 			goModLayer = factory.Build.Layers.Layer(mod.Dependency)
 			launchLayer = factory.Build.Layers.Layer(mod.Launch)
 			buildPath = filepath.Join(goModLayer.Root, "bin", appName)

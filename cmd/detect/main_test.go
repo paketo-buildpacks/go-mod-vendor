@@ -33,11 +33,15 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 			goModString := fmt.Sprintf("This is a go mod file")
 			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "go.mod"), goModString)
 
-			plan := buildplan.BuildPlan{
-				mod.Dependency: buildplan.Dependency{
-					Metadata: buildplan.Metadata{"build": true},
-				},
-			}
+			plan := buildplan.Plan{
+				Provides: []buildplan.Provided{{Name: mod.Dependency}},
+				Requires: []buildplan.Required{{
+					Name: mod.Dependency,
+					Metadata: buildplan.Metadata{
+						"build": true,
+					},
+				}}}
+
 			runDetectAndExpectBuildplan(factory, plan)
 		})
 	})
@@ -52,11 +56,11 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 }
 
-func runDetectAndExpectBuildplan(factory *test.DetectFactory, buildplan buildplan.BuildPlan) {
+func runDetectAndExpectBuildplan(factory *test.DetectFactory, buildplan buildplan.Plan) {
 	code, err := runDetect(factory.Detect)
 	Expect(err).NotTo(HaveOccurred())
 
 	Expect(code).To(Equal(detect.PassStatusCode))
 
-	Expect(factory.Output).To(Equal(buildplan))
+	Expect(factory.Plans.Plan).To(Equal(buildplan))
 }

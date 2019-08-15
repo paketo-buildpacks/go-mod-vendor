@@ -3,9 +3,10 @@ package main
 import (
 	"testing"
 
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
+
 	"github.com/golang/mock/gomock"
 
-	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/go-mod-cnb/mod"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
@@ -34,7 +35,9 @@ func testBuild(t *testing.T, _ spec.G, it spec.S) {
 	})
 
 	it("passes if it exists in the build plan", func() {
-		factory.AddBuildPlan(mod.Dependency, buildplan.Dependency{})
+		factory.AddPlan(buildpackplan.Plan{
+			Name: mod.Dependency,
+		})
 		mockGoModContributor.EXPECT().Contribute()
 		mockGoModContributor.EXPECT().Cleanup()
 
@@ -50,7 +53,9 @@ func testBuild(t *testing.T, _ spec.G, it spec.S) {
 	})
 
 	it("fails false if go-mod is not in the build plan", func() {
-		factory.AddBuildPlan("foo", buildplan.Dependency{})
+		factory.AddPlan(buildpackplan.Plan{
+			Name: "foo",
+		})
 
 		code, err := runBuild(factory.Build, mockGoModContributor)
 		Expect(err).NotTo(HaveOccurred())

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/buildpack/libbuildpack/buildplan"
+	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 
 	"github.com/cloudfoundry/go-mod-cnb/utils"
 
@@ -36,9 +36,13 @@ func main() {
 }
 
 func runBuild(context build.Build, goModContributor GoModContributor) (int, error) {
-	context.Logger.FirstLine(context.Logger.PrettyIdentity(context.Buildpack))
+	context.Logger.Title(context.Buildpack)
 
-	_, wantDependency := context.BuildPlan[mod.Dependency]
+	_, wantDependency, err := context.Plans.GetShallowMerged(mod.Dependency)
+	if err != nil {
+		return context.Failure(105), err
+	}
+
 	if !wantDependency {
 		return context.Failure(102), nil
 	}
@@ -51,5 +55,5 @@ func runBuild(context build.Build, goModContributor GoModContributor) (int, erro
 		return context.Failure(104), err
 	}
 
-	return context.Success(buildplan.BuildPlan{})
+	return context.Success(buildpackplan.Plan{})
 }
