@@ -15,6 +15,8 @@ import (
 	"github.com/cloudfoundry/libcfbuildpack/detect"
 )
 
+const GoDependency = "go"
+
 func main() {
 	context, err := detect.DefaultDetect()
 	if err != nil {
@@ -45,6 +47,8 @@ func runDetect(context detect.Detect) (int, error) {
 			Metadata: buildplan.Metadata{
 				"build": true,
 			},
+		}, {
+			Name: GoDependency,
 		}},
 	})
 
