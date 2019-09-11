@@ -46,6 +46,7 @@ func (m Metadata) Identity() (name string, version string) {
 }
 
 type Contributor struct {
+	context 	  build.Build
 	goModMetadata MetadataInterface
 	goBinMetadata MetadataInterface
 	goModLayer    layers.Layer
@@ -60,6 +61,7 @@ type Contributor struct {
 
 func NewContributor(context build.Build, runner Runner) Contributor {
 	return Contributor{
+		context:       context,
 		goModLayer:    context.Layers.Layer(Dependency),
 		launchLayer:   context.Layers.Layer(Launch),
 		goModMetadata: nil,
@@ -172,7 +174,7 @@ func (c Contributor) setStartCommand() error {
 	c.logger.Info("contributing start command")
 	launchPath := filepath.Join(c.launchLayer.Root, c.appName)
 
-	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath, false}}})
+	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath, c.context.Stack == "org.cloudfoundry.stacks.tiny"}}})
 }
 
 func parseAppNameFromOutput(output string) string {
