@@ -73,7 +73,7 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 				os.Unsetenv("BP_GO_TARGETS")
 			}
 
-			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}}))
+			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath, false}}}))
 
 			Expect(goModLayer).To(test.HaveLayerMetadata(false, true, false))
 			Expect(launchLayer).To(test.HaveLayerMetadata(false, false, true))

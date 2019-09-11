@@ -172,7 +172,7 @@ func (c Contributor) setStartCommand() error {
 	c.logger.Info("contributing start command")
 	launchPath := filepath.Join(c.launchLayer.Root, c.appName)
 
-	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath}}})
+	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath, false}}})
 }
 
 func parseAppNameFromOutput(output string) string {
