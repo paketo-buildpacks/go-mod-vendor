@@ -9,6 +9,7 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/onsi/gomega v1.7.0
 	github.com/pkg/errors v0.8.1
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/sclevine/spec v1.2.0
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	google.golang.org/appengine v1.6.2 // indirect

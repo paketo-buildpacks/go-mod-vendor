@@ -1,13 +1,12 @@
 package mod
 
 import (
-	"io/ioutil"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
-	"gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
@@ -46,7 +45,7 @@ func (m Metadata) Identity() (name string, version string) {
 }
 
 type Contributor struct {
-	context 	  build.Build
+	context       build.Build
 	goModMetadata MetadataInterface
 	goBinMetadata MetadataInterface
 	goModLayer    layers.Layer
@@ -56,7 +55,7 @@ type Contributor struct {
 	logger        Logger
 	launch        layers.Layers
 	appName       string
-	targets       []string
+	config        Config
 }
 
 func NewContributor(context build.Build, runner Runner) Contributor {
@@ -74,11 +73,11 @@ func NewContributor(context build.Build, runner Runner) Contributor {
 }
 
 func (c Contributor) Contribute() error {
-	targets, err := c.determineTargets()
+	var err error
+	c.config, err = LoadConfig(c.appRoot)
 	if err != nil {
 		return err
 	}
-	c.targets = targets
 
 	if err := c.goModLayer.Contribute(c.goModMetadata, c.ContributeGoModules, []layers.Flag{layers.Cache}...); err != nil {
 		return err
@@ -109,8 +108,16 @@ func (c Contributor) ContributeGoModules(_ layers.Layer) error {
 		args = append(args, "-mod=vendor")
 	}
 
-	for _, target := range c.targets {
+	for _, target := range c.config.Targets {
 		args = append(args, target)
+	}
+
+	if len(c.config.LDFlags) > 0 {
+		var ldflags []string
+		for ldflagKey, ldflagValue := range c.config.LDFlags {
+			ldflags = append(ldflags, fmt.Sprintf("-X %s=%s", ldflagKey, ldflagValue))
+		}
+		args = append(args, "-ldflags", strings.Join(ldflags, " "))
 	}
 
 	c.logger.Info("Running `go install`")
@@ -154,8 +161,8 @@ type Module struct {
 }
 
 func (c *Contributor) setAppName() error {
-	if len(c.targets) != 0 {
-		targetSegments := strings.Split(c.targets[0], "/")
+	if len(c.config.Targets) != 0 {
+		targetSegments := strings.Split(c.config.Targets[0], "/")
 		appName := targetSegments[len(targetSegments)-1]
 		c.appName = appName
 	} else {
@@ -174,7 +181,15 @@ func (c Contributor) setStartCommand() error {
 	c.logger.Info("contributing start command")
 	launchPath := filepath.Join(c.launchLayer.Root, c.appName)
 
-	return c.launch.WriteApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath, c.context.Stack == "org.cloudfoundry.stacks.tiny"}}})
+	return c.launch.WriteApplicationMetadata(layers.Metadata{
+		Processes: []layers.Process{
+			{
+				Type:    "web",
+				Command: launchPath,
+				Direct:  c.context.Stack == "org.cloudfoundry.stacks.tiny",
+			},
+		},
+	})
 }
 
 func parseAppNameFromOutput(output string) string {
@@ -186,36 +201,4 @@ func parseAppNameFromOutput(output string) string {
 func sanitizeOutput(output string) string {
 	lines := strings.Split(output, "\n")
 	return lines[len(lines)-1]
-}
-
-type Config struct {
-	Go struct {
-		Targets []string `yaml:"targets"`
-	} `yaml:"go"`
-}
-
-func (c Contributor) determineTargets() ([]string, error) {
-	if buildTarget := os.Getenv("BP_GO_TARGETS"); buildTarget != "" {
-		targets := strings.Split(buildTarget, ":")
-		return targets, nil
-	}
-
-	configPath := filepath.Join(c.appRoot, "buildpack.yml")
-	config := Config{}
-	if _, err := os.Stat(configPath); err == nil {
-		yamlFile, err := ioutil.ReadFile(configPath)
-		if err != nil {
-			return nil, err
-		}
-		err = yaml.Unmarshal(yamlFile, &config)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if len(config.Go.Targets) < 1 {
-		return []string{}, nil
-	}
-
-	return config.Go.Targets, nil
 }

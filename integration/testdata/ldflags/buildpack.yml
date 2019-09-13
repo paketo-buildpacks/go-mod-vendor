@@ -1,0 +1,4 @@
+go:
+  ldflags:
+    main.version: v1.2.3
+    main.sha: 7a82056

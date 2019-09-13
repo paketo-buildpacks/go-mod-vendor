@@ -92,6 +92,38 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 				Expect(contributor.Contribute()).To(Succeed())
 			})
 
+			when("given ldflags", func() {
+				it.Before(func() {
+					Expect(ioutil.WriteFile(filepath.Join(appRoot, "buildpack.yml"),
+						[]byte(`---
+go:
+  ldflags:
+    main.linker_flag: linked_flag
+    main.other_linker_flag: other_linked_flag`),
+						os.FileMode(0666))).To(Succeed())
+				})
+
+				it("runs `go install` with these ldflags", func() {
+					mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
+
+					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+
+					mockRunner.EXPECT().
+						Run(
+							"go", appRoot, false, "install",
+							"-buildmode", "pie",
+							"-tags", "cloudfoundry",
+							"-ldflags", gomock.Any(),
+						).
+						Do(func(args ...interface{}) {
+							Expect(args[9]).To(ContainSubstring("-X main.linker_flag=linked_flag"))
+							Expect(args[9]).To(ContainSubstring("-X main.other_linker_flag=other_linked_flag"))
+							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+						})
+
+					Expect(contributor.Contribute()).To(Succeed())
+				})
+			})
 
 			when("the target is not at the root directory", func() {
 				it.Before(func() {
@@ -210,8 +242,6 @@ go:
 			})
 		})
 	})
-
-
 
 	when("Cleanup", func() {
 		it("removes the contents of the app dir", func() {
