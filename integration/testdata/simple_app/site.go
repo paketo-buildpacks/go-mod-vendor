@@ -39,9 +39,7 @@ func main() {
 func hello(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintln(res, "go, world")
 
-	url := os.Getenv("DATABASE_URL")
-
 	fmt.Fprintln(res, ".")
-	fmt.Fprintln(res, url)
+	fmt.Fprintln(res, fmt.Sprintf("PATH=%s", os.Getenv("PATH")))
 	fmt.Fprintln(res, ".")
 }

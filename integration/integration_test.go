@@ -50,8 +50,9 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 		Expect(app.Start()).To(Succeed())
 
-		_, _, err = app.HTTPGet("/")
+		body, _, err := app.HTTPGet("/")
 		Expect(err).NotTo(HaveOccurred())
+		Expect(body).To(MatchRegexp("PATH=.*/layers/org.cloudfoundry.go-mod/app-binary/bin:"))
 	})
 
 	when("the app is pushed twice", func() {

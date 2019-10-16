@@ -132,9 +132,9 @@ func (c Contributor) ContributeBinLayer(binLayer layers.Layer) error {
 	c.logger.Info("Contributing app binary layer")
 
 	oldBinPath := filepath.Join(c.goModLayer.Root, "bin", c.appName)
-	newBinPath := filepath.Join(c.launchLayer.Root, c.appName)
+	newBinPath := filepath.Join(c.launchLayer.Root, "bin", c.appName)
 
-	if err := os.MkdirAll(c.launchLayer.Root, os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepath.Join(c.launchLayer.Root, "bin"), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -179,7 +179,7 @@ func (c *Contributor) setAppName() error {
 
 func (c Contributor) setStartCommand() error {
 	c.logger.Info("contributing start command")
-	launchPath := filepath.Join(c.launchLayer.Root, c.appName)
+	launchPath := filepath.Join(c.launchLayer.Root, "bin", c.appName)
 
 	return c.launch.WriteApplicationMetadata(layers.Metadata{
 		Processes: []layers.Process{

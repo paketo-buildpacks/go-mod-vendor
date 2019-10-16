@@ -63,7 +63,7 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 			goModLayer = factory.Build.Layers.Layer(mod.Dependency)
 			launchLayer = factory.Build.Layers.Layer(mod.Launch)
 			buildPath = filepath.Join(goModLayer.Root, "bin", appName)
-			launchPath = filepath.Join(launchLayer.Root, appName)
+			launchPath = filepath.Join(launchLayer.Root, "bin", appName)
 
 			contributor = mod.NewContributor(factory.Build, mockRunner)
 		})
@@ -73,7 +73,15 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 				os.Unsetenv("BP_GO_TARGETS")
 			}
 
-			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath, false}}}))
+			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+				Processes: []layers.Process{
+					{
+						Type:    "web",
+						Command: launchPath,
+						Direct:  false,
+					},
+				},
+			}))
 
 			Expect(goModLayer).To(test.HaveLayerMetadata(false, true, false))
 			Expect(launchLayer).To(test.HaveLayerMetadata(false, false, true))
@@ -128,7 +136,7 @@ go:
 			when("the target is not at the root directory", func() {
 				it.Before(func() {
 					buildPath = filepath.Join(goModLayer.Root, "bin", "first")
-					launchPath = filepath.Join(launchLayer.Root, "first")
+					launchPath = filepath.Join(launchLayer.Root, "bin", "first")
 				})
 
 				when("`BP_GO_TARGETS` environment variable is set", func() {
@@ -194,7 +202,7 @@ go:
 			goModLayer = factory.Build.Layers.Layer(mod.Dependency)
 			launchLayer = factory.Build.Layers.Layer(mod.Launch)
 			buildPath = filepath.Join(goModLayer.Root, "bin", appName)
-			launchPath = filepath.Join(launchLayer.Root, appName)
+			launchPath = filepath.Join(launchLayer.Root, "bin", appName)
 
 			contributor = mod.NewContributor(factory.Build, mockRunner)
 		})
@@ -204,7 +212,15 @@ go:
 				os.Unsetenv("BP_GO_TARGETS")
 			}
 
-			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{Processes: []layers.Process{{"web", launchPath, true}}}))
+			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+				Processes: []layers.Process{
+					{
+						Type:    "web",
+						Command: launchPath,
+						Direct:  true,
+					},
+				},
+			}))
 
 			Expect(goModLayer).To(test.HaveLayerMetadata(false, true, false))
 			Expect(launchLayer).To(test.HaveLayerMetadata(false, false, true))
