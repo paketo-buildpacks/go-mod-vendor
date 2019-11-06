@@ -63,8 +63,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			defer app.Destroy()
 
 			Expect(app.BuildLogs()).To(MatchRegexp(goFinding))
-			Expect(app.BuildLogs()).To(MatchRegexp(goDownloading))
-			Expect(app.BuildLogs()).To(MatchRegexp(goExtracting))
 
 			_, imageID, _, err := app.Info()
 			Expect(err).NotTo(HaveOccurred())
@@ -74,8 +72,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			repeatBuildLogs := app.BuildLogs()
 			Expect(repeatBuildLogs).NotTo(MatchRegexp(goFinding))
-			Expect(repeatBuildLogs).NotTo(MatchRegexp(goDownloading))
-			Expect(repeatBuildLogs).NotTo(MatchRegexp(goExtracting))
+			Expect(repeatBuildLogs).To(ContainSubstring(`Caching layer 'org.cloudfoundry.go-mod:go-cache'`))
 
 			Expect(app.Start()).To(Succeed())
 
