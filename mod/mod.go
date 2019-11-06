@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/cloudfoundry/libcfbuildpack/helper"
-
 	"github.com/cloudfoundry/libcfbuildpack/build"
+	"github.com/cloudfoundry/libcfbuildpack/helper"
 	"github.com/cloudfoundry/libcfbuildpack/layers"
 )
 
 const (
 	Dependency = "go-mod"
+	Cache      = "go-cache"
 	Launch     = "app-binary"
 )
 
@@ -27,59 +27,50 @@ type Logger interface {
 	Info(format string, args ...interface{})
 }
 
-type PkgManager interface {
-	Install(location, cacheDir string) error
-}
-
-type MetadataInterface interface {
-	Identity() (name string, version string)
-}
-
-type Metadata struct {
-	Name string
-	Hash string
-}
-
-func (m Metadata) Identity() (name string, version string) {
-	return m.Name, m.Hash
-}
-
 type Contributor struct {
-	context       build.Build
-	goModMetadata MetadataInterface
-	goBinMetadata MetadataInterface
-	goModLayer    layers.Layer
-	launchLayer   layers.Layer
-	runner        Runner
-	appRoot       string
-	logger        Logger
-	launch        layers.Layers
-	appName       string
-	config        Config
+	context      build.Build
+	goModLayer   layers.Layer
+	goCacheLayer layers.Layer
+	launchLayer  layers.Layer
+	runner       Runner
+	appRoot      string
+	logger       Logger
+	launch       layers.Layers
+	appName      string
+	config       Config
 }
 
 func NewContributor(context build.Build, runner Runner) Contributor {
 	return Contributor{
-		context:       context,
-		goModLayer:    context.Layers.Layer(Dependency),
-		launchLayer:   context.Layers.Layer(Launch),
-		goModMetadata: nil,
-		goBinMetadata: nil,
-		runner:        runner,
-		appRoot:       context.Application.Root,
-		logger:        context.Logger,
-		launch:        context.Layers,
+		context:      context,
+		goModLayer:   context.Layers.Layer(Dependency),
+		goCacheLayer: context.Layers.Layer(Cache),
+		launchLayer:  context.Layers.Layer(Launch),
+		runner:       runner,
+		appRoot:      context.Application.Root,
+		logger:       context.Logger,
+		launch:       context.Layers,
 	}
 }
 
 func (c Contributor) Contribute() error {
 	var err error
+
 	c.config, err = LoadConfig(c.appRoot)
 	if err != nil {
 		return err
 	}
 
-	if err := c.goModLayer.Contribute(c.goModMetadata, c.ContributeGoModules, []layers.Flag{layers.Cache}...); err != nil {
+	c.logger.Info("Setting environment variables")
+	if err := c.runner.SetEnv("GOPATH", c.goModLayer.Root); err != nil {
+		return err
+	}
+
+	if err := c.runner.SetEnv("GOCACHE", c.goCacheLayer.Root); err != nil {
+		return err
+	}
+
+	if err := c.goModLayer.Contribute(nil, c.ContributeGoModules, layers.Cache); err != nil {
 		return err
 	}
 
@@ -87,7 +78,11 @@ func (c Contributor) Contribute() error {
 		return err
 	}
 
-	if err := c.launchLayer.Contribute(c.goBinMetadata, c.ContributeBinLayer, []layers.Flag{layers.Launch}...); err != nil {
+	if err := c.launchLayer.Contribute(nil, c.ContributeBinLayer, layers.Launch); err != nil {
+		return err
+	}
+
+	if err := c.goCacheLayer.Contribute(nil, c.ContributeCacheLayer, layers.Cache); err != nil {
 		return err
 	}
 
@@ -95,11 +90,15 @@ func (c Contributor) Contribute() error {
 }
 
 func (c Contributor) ContributeGoModules(_ layers.Layer) error {
-	c.logger.Info("Setting environment variables")
-	if err := c.runner.SetEnv("GOPATH", c.goModLayer.Root); err != nil {
+	if exists, err := helper.FileExists(filepath.Join(c.appRoot, "vendor")); err != nil {
 		return err
+	} else if exists {
+		return nil
 	}
+	return c.runner.Run("go", c.appRoot, false, "mod", "download")
+}
 
+func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 	args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
 
 	if exists, err := helper.FileExists(filepath.Join(c.appRoot, "vendor")); err != nil {
@@ -125,12 +124,6 @@ func (c Contributor) ContributeGoModules(_ layers.Layer) error {
 		return err
 	}
 
-	return nil
-}
-
-func (c Contributor) ContributeBinLayer(binLayer layers.Layer) error {
-	c.logger.Info("Contributing app binary layer")
-
 	oldBinPath := filepath.Join(c.goModLayer.Root, "bin", c.appName)
 	newBinPath := filepath.Join(c.launchLayer.Root, "bin", c.appName)
 
@@ -139,6 +132,11 @@ func (c Contributor) ContributeBinLayer(binLayer layers.Layer) error {
 	}
 
 	return os.Rename(oldBinPath, newBinPath)
+}
+
+func (c Contributor) ContributeCacheLayer(_ layers.Layer) error {
+	// The cache should already exist in the layer, we do this to write empty metadata so that this layer will always be retrieved
+	return nil
 }
 
 func (c Contributor) Cleanup() error {
@@ -154,10 +152,6 @@ func (c Contributor) Cleanup() error {
 	}
 
 	return nil
-}
-
-type Module struct {
-	Path string `json:"Path"`
 }
 
 func (c *Contributor) setAppName() error {
@@ -178,7 +172,7 @@ func (c *Contributor) setAppName() error {
 }
 
 func (c Contributor) setStartCommand() error {
-	c.logger.Info("contributing start command")
+	c.logger.Info("Contributing start command")
 	launchPath := filepath.Join(c.launchLayer.Root, "bin", c.appName)
 
 	return c.launch.WriteApplicationMetadata(layers.Metadata{
