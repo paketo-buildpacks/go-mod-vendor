@@ -112,7 +112,7 @@ go:
 						os.FileMode(0666))).To(Succeed())
 				})
 
-				it("runs `go install` with these ldflags", func() {
+				it("runs `go install` with ldflags", func() {
 					mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
 
 					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
@@ -125,11 +125,46 @@ go:
 							"go", appRoot, false, "install",
 							"-buildmode", "pie",
 							"-tags", "cloudfoundry",
-							"-ldflags", gomock.Any(),
+							"-ldflags", `"-X main.linker_flag=linked_flag -X main.other_linker_flag=other_linked_flag"`,
 						).
-						Do(func(args ...interface{}) {
-							Expect(args[9]).To(ContainSubstring("-X main.linker_flag=linked_flag"))
-							Expect(args[9]).To(ContainSubstring("-X main.other_linker_flag=other_linked_flag"))
+						Do(func(_ ...interface{}) {
+							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+						})
+
+					Expect(contributor.Contribute()).To(Succeed())
+				})
+			})
+
+			when("given ldflags and targets", func() {
+				it.Before(func() {
+					Expect(ioutil.WriteFile(filepath.Join(appRoot, "buildpack.yml"),
+						[]byte(`---
+go:
+  targets: ["./path/to/first"]
+  ldflags:
+    main.linker_flag: linked_flag
+    main.other_linker_flag: other_linked_flag`),
+						os.FileMode(0666))).To(Succeed())
+
+					buildPath = filepath.Join(goModLayer.Root, "bin", "first")
+					launchPath = filepath.Join(launchLayer.Root, "bin", "first")
+				})
+
+				it("runs `go install` with ldflags before targets", func() {
+					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+
+					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
+
+					mockRunner.EXPECT().
+						Run(
+							"go", appRoot, false, "install",
+							"-buildmode", "pie",
+							"-tags", "cloudfoundry",
+							"-ldflags", `"-X main.linker_flag=linked_flag -X main.other_linker_flag=other_linked_flag"`,
+							"./path/to/first",
+						).
+						Do(func(_ ...interface{}) {
 							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
 						})
 

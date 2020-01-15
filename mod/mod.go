@@ -107,16 +107,16 @@ func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 		args = append(args, "-mod=vendor")
 	}
 
-	for _, target := range c.config.Targets {
-		args = append(args, target)
-	}
-
 	if len(c.config.LDFlags) > 0 {
 		var ldflags []string
 		for ldflagKey, ldflagValue := range c.config.LDFlags {
 			ldflags = append(ldflags, fmt.Sprintf("-X %s=%s", ldflagKey, ldflagValue))
 		}
-		args = append(args, "-ldflags", strings.Join(ldflags, " "))
+		args = append(args, "-ldflags", fmt.Sprintf(`"%s"`, strings.Join(ldflags, " ")))
+	}
+
+	for _, target := range c.config.Targets {
+		args = append(args, target)
 	}
 
 	c.logger.Info("Running `go install`")
