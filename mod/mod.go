@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
@@ -107,16 +108,17 @@ func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 		args = append(args, "-mod=vendor")
 	}
 
-	for _, target := range c.config.Targets {
-		args = append(args, target)
-	}
-
 	if len(c.config.LDFlags) > 0 {
 		var ldflags []string
 		for ldflagKey, ldflagValue := range c.config.LDFlags {
-			ldflags = append(ldflags, fmt.Sprintf("-X %s=%s", ldflagKey, ldflagValue))
+			ldflags = append(ldflags, fmt.Sprintf(`-X '%s=%s'`, ldflagKey, ldflagValue))
 		}
-		args = append(args, "-ldflags", strings.Join(ldflags, " "))
+		sort.Sort(sort.StringSlice(ldflags))
+		args = append(args, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
+	}
+
+	for _, target := range c.config.Targets {
+		args = append(args, target)
 	}
 
 	c.logger.Info("Running `go install`")
