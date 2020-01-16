@@ -125,7 +125,7 @@ go:
 							"go", appRoot, false, "install",
 							"-buildmode", "pie",
 							"-tags", "cloudfoundry",
-							"-ldflags", `"-X main.linker_flag=linked_flag -X main.other_linker_flag=other_linked_flag"`,
+							`-ldflags=-X 'main.linker_flag=linked_flag' -X 'main.other_linker_flag=other_linked_flag'`,
 						).
 						Do(func(_ ...interface{}) {
 							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
@@ -161,7 +161,7 @@ go:
 							"go", appRoot, false, "install",
 							"-buildmode", "pie",
 							"-tags", "cloudfoundry",
-							"-ldflags", `"-X main.linker_flag=linked_flag -X main.other_linker_flag=other_linked_flag"`,
+							`-ldflags=-X 'main.linker_flag=linked_flag' -X 'main.other_linker_flag=other_linked_flag'`,
 							"./path/to/first",
 						).
 						Do(func(_ ...interface{}) {

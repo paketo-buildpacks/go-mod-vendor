@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
@@ -110,9 +111,10 @@ func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 	if len(c.config.LDFlags) > 0 {
 		var ldflags []string
 		for ldflagKey, ldflagValue := range c.config.LDFlags {
-			ldflags = append(ldflags, fmt.Sprintf("-X %s=%s", ldflagKey, ldflagValue))
+			ldflags = append(ldflags, fmt.Sprintf(`-X '%s=%s'`, ldflagKey, ldflagValue))
 		}
-		args = append(args, "-ldflags", fmt.Sprintf(`"%s"`, strings.Join(ldflags, " ")))
+		sort.Sort(sort.StringSlice(ldflags))
+		args = append(args, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
 	}
 
 	for _, target := range c.config.Targets {
