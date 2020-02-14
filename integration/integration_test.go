@@ -28,7 +28,7 @@ func TestIntegration(t *testing.T) {
 	Expect(err).ToNot(HaveOccurred())
 	defer dagger.DeleteBuildpack(goURI)
 
-	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}))
+	spec.Run(t, "Integration", testIntegration, spec.Report(report.Terminal{}), spec.Parallel())
 }
 
 func testIntegration(t *testing.T, when spec.G, it spec.S) {
@@ -72,7 +72,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			repeatBuildLogs := app.BuildLogs()
 			Expect(repeatBuildLogs).NotTo(MatchRegexp(goFinding))
-			Expect(repeatBuildLogs).To(ContainSubstring(`Caching layer 'org.cloudfoundry.go-mod:go-cache'`))
+			Expect(repeatBuildLogs).To(ContainSubstring(`Adding cache layer 'org.cloudfoundry.go-mod:go-cache'`))
 
 			Expect(app.Start()).To(Succeed())
 
