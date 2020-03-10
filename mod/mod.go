@@ -100,7 +100,7 @@ func (c Contributor) ContributeGoModules(_ layers.Layer) error {
 }
 
 func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
-	args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry"}
+	args := []string{"install", "-buildmode", "pie", "-tags", "cloudfoundry", "-s", "-w"}
 
 	if exists, err := helper.FileExists(filepath.Join(c.appRoot, "vendor")); err != nil {
 		return err
