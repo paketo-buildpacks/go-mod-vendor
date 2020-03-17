@@ -158,7 +158,8 @@ func (c Contributor) Cleanup() error {
 
 func (c *Contributor) setAppName() error {
 	if len(c.config.Targets) != 0 {
-		targetSegments := strings.Split(c.config.Targets[0], "/")
+		appTarget := strings.TrimSuffix(c.config.Targets[0], "/")
+		targetSegments := strings.Split(appTarget, "/")
 		appName := targetSegments[len(targetSegments)-1]
 		c.appName = appName
 	} else {

@@ -179,6 +179,26 @@ go:
 				})
 
 				when("`BP_GO_TARGETS` environment variable is set", func() {
+					when("`BP_GO_TARGETS` value contains a trailing forward slash", func() {
+						it("runs `go install`, gets app name and contributes the start command", func() {
+
+							factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
+								"BP_GO_TARGETS": "./path/to/first/:./path/to/second/",
+							}
+							factory.Build.Platform.EnvironmentVariables.SetAll()
+
+							mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+							mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+
+							mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
+
+							mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first/", "./path/to/second/").Do(func(_ ...interface{}) {
+								Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+							})
+
+							Expect(contributor.Contribute()).To(Succeed())
+						})
+					})
 					it("runs `go install`, gets app name and contributes the start command", func() {
 						factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
 							"BP_GO_TARGETS": "./path/to/first:./path/to/second",
