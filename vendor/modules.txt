@@ -36,7 +36,7 @@ github.com/cloudfoundry/libcfbuildpack/test
 github.com/cloudfoundry/packit/pexec
 # github.com/fatih/color v1.9.0
 github.com/fatih/color
-# github.com/golang/mock v1.3.1
+# github.com/golang/mock v1.4.3
 github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
@@ -50,7 +50,7 @@ github.com/mattn/go-colorable
 github.com/mattn/go-isatty
 # github.com/mitchellh/mapstructure v1.1.2
 github.com/mitchellh/mapstructure
-# github.com/onsi/gomega v1.8.1
+# github.com/onsi/gomega v1.9.0
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/internal/assertion
@@ -63,7 +63,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/pkg/errors v0.8.1
+# github.com/pkg/errors v0.9.1
 github.com/pkg/errors
 # github.com/sclevine/spec v1.4.0
 github.com/sclevine/spec
