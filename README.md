@@ -21,6 +21,8 @@ file that looks like the following:
   # The Go Mod buildpack does not support any non-required metadata options.
 ```
 
+## Usage
+
 To package this buildpack for consumption:
 ```
 $ ./scripts/package.sh
