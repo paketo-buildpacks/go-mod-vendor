@@ -18,7 +18,14 @@ file that looks like the following:
   # Note: The version field is unsupported as there is no version for a set of
   # go-mod.
 
-  # The Go Mod buildpack does not support any non-required metadata options.
+  # The Go Mod buildpack supports some non-required metadata options.
+  [requires.metadata]
+
+    # Setting the build flag to true will ensure that the Go Mod
+    # depdendency is available on the $PATH for subsequent buildpacks during
+    # their build phase. If you are writing a buildpack that needs to run Go Mod
+    # during its build process, this flag should be set to true.
+    build = true
 ```
 
 ## Usage
