@@ -1,5 +1,9 @@
 # Go Mod Cloud Native Buildpack
 
+The Go Mod CNB builds a Go application binary, using the [`go
+mod`](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more)
+functionality provided by the Go Compiler CNB to package dependencies.
+
 ## Integration
 
 The Go Mod CNB provides go-mod as a dependency. Downstream
