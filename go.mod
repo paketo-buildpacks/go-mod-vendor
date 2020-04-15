@@ -1,4 +1,4 @@
-module github.com/cloudfoundry/go-mod-cnb
+module github.com/paketo-buildpacks/go-mod
 
 go 1.12
 
