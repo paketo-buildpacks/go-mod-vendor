@@ -11,9 +11,15 @@ source "${PWD}/scripts/.util/tools.sh"
 # shellcheck source=.util/print.sh
 source "${PWD}/scripts/.util/print.sh"
 
+if ! command -v realpath > /dev/null; then
+  function realpath() {
+      [[ "${1}" = /* ]] && echo "${1}" || echo "${PWD}/${1#./}"
+  }
+fi
+
 function main() {
     local full_path args version cached archive offline
-    PACKAGE_DIR=${PACKAGE_DIR:-"${BUILDPACKDIR}_$(openssl rand -hex 4)"}
+    PACKAGE_DIR=${PACKAGE_DIR:-"${BUILDPACKDIR}/$(basename ${BUILDPACKDIR})_$(openssl rand -hex 4)"}
 
     full_path="$(realpath "${PACKAGE_DIR}")"
 

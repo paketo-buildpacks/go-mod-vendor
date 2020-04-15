@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/buildpack/libbuildpack/buildplan"
-	"github.com/cloudfoundry/go-mod-cnb/mod"
+	"github.com/paketo-buildpacks/go-mod/mod"
 
 	. "github.com/onsi/gomega"
 

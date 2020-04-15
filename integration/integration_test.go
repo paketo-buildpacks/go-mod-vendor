@@ -52,7 +52,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 		body, _, err := app.HTTPGet("/")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(body).To(MatchRegexp("PATH=.*/layers/org.cloudfoundry.go-mod/app-binary/bin:"))
+		Expect(body).To(MatchRegexp("PATH=.*/layers/paketo-buildpacks_go-mod/app-binary/bin:"))
 	})
 
 	when("the app is pushed twice", func() {
@@ -72,7 +72,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 			repeatBuildLogs := app.BuildLogs()
 			Expect(repeatBuildLogs).NotTo(MatchRegexp(goFinding))
-			Expect(repeatBuildLogs).To(ContainSubstring(`Adding cache layer 'org.cloudfoundry.go-mod:go-cache'`))
+			Expect(repeatBuildLogs).To(ContainSubstring(`Adding cache layer 'paketo-buildpacks/go-mod:go-cache'`))
 
 			Expect(app.Start()).To(Succeed())
 

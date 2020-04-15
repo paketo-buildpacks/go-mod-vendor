@@ -98,7 +98,7 @@ function util::tools::pack::expand() {
     tarball="$(echo "${url}" | sed "s/.*\///")"
     version="v$(echo "${url}" | sed 's/pack-//' | sed 's/-.*//')"
 
-    wget -q "${url}"
+    curl --location --silent --output "${tarball}" "${url}"
     tar xzf "${tarball}" -C "${dir}"
     rm "${tarball}"
 }
@@ -123,8 +123,7 @@ function util::tools::jam::install () {
 
     if [[ ! -f "${dir}/jam" ]]; then
         util::print::title "Installing jam"
-        go get -u github.com/cloudfoundry/packit/cargo/jam && \
-            go build -o "${dir}/jam" github.com/cloudfoundry/packit/cargo/jam
+        GOBIN="${dir}" go install github.com/cloudfoundry/packit/cargo/jam
     fi
 }
 
@@ -148,6 +147,6 @@ function util::tools::packager::install () {
 
     if [[ ! -f "${dir}/packager" ]]; then
         util::print::title "Installing packager"
-        go build -o "${dir}/packager" github.com/cloudfoundry/libcfbuildpack/packager
+        GOBIN="${dir}" go install github.com/cloudfoundry/libcfbuildpack/packager
     fi
 }
