@@ -40,11 +40,15 @@ $ ./scripts/package.sh
 ```
 This builds the buildpack's Go source using GOOS=linux by default. You can supply another value as the first argument to package.sh.
 
-## Applications outside the root directory
-
-If your application's main package is not in the root of the directory, then you'll need to specify this in the `buildpack.yml` file. Here's an example of how to do that:
+## `buildpack.yml` Configuration
 
 ```yaml
 go:
+  # this allows you to override the location of the main package of the app
   targets: ["./cmd/web"]
+
+  # this allows you to set Go ldflags for compilation
+  ldflags:
+    main.version: v1.2.3
+    main.sha: 1234567
 ```
