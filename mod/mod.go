@@ -126,14 +126,21 @@ func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 		return err
 	}
 
-	oldBinPath := filepath.Join(c.goModLayer.Root, "bin", c.appName)
+	// go-install installs executables in $GOPATH/bin when not overridden by GOBIN.
+	binPath := filepath.Join(c.goModLayer.Root, "bin", c.appName)
 	newBinPath := filepath.Join(c.launchLayer.Root, "bin", c.appName)
+
+	if _, err := os.Stat(binPath); os.IsNotExist(err) {
+		c.logger.Info("`go install` failed to install executable(s) in %s",
+			filepath.Join(c.goModLayer.Root, "bin"))
+		return err
+	}
 
 	if err := os.MkdirAll(filepath.Join(c.launchLayer.Root, "bin"), os.ModePerm); err != nil {
 		return err
 	}
 
-	return os.Rename(oldBinPath, newBinPath)
+	return os.Rename(binPath, newBinPath)
 }
 
 func (c Contributor) ContributeCacheLayer(_ layers.Layer) error {
