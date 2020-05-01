@@ -122,4 +122,12 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(body).To(ContainSubstring("main.sha: 7a82056"))
 		})
 	})
+
+	when("the app does not build to a complete executable", func() {
+		it("build should fail with a descriptive error", func() {
+			_, err := dagger.PackBuild(filepath.Join("testdata", "nomain_app"), goURI, goModURI)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("`go install` failed to install executable(s) in /layers/paketo-buildpacks_go-mod/go-mod/bin"))
+		})
+	})
 }
