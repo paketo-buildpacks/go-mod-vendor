@@ -58,25 +58,27 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	when("the app is pushed twice", func() {
 		it("does not reinstall go modules", func() {
 			appDir := filepath.Join("testdata", "simple_app")
-			app, err := dagger.PackBuild(appDir, goURI, goModURI)
+
+			firstApp, err := dagger.PackBuild(appDir, goURI, goModURI)
 			Expect(err).ToNot(HaveOccurred())
-			defer app.Destroy()
+			defer firstApp.Destroy()
 
-			Expect(app.BuildLogs()).To(MatchRegexp(goFinding))
+			Expect(firstApp.BuildLogs()).To(MatchRegexp(goFinding))
 
-			_, imageID, _, err := app.Info()
+			_, imageID, _, err := firstApp.Info()
 			Expect(err).NotTo(HaveOccurred())
 
-			app, err = dagger.PackBuildNamedImage(imageID, appDir, goURI, goModURI)
+			secondApp, err := dagger.PackBuildNamedImage(imageID, appDir, goURI, goModURI)
 			Expect(err).ToNot(HaveOccurred())
+			defer secondApp.Destroy()
 
-			repeatBuildLogs := app.BuildLogs()
+			repeatBuildLogs := secondApp.BuildLogs()
 			Expect(repeatBuildLogs).NotTo(MatchRegexp(goFinding))
 			Expect(repeatBuildLogs).To(ContainSubstring(`Adding cache layer 'paketo-buildpacks/go-mod:go-cache'`))
 
-			Expect(app.Start()).To(Succeed())
+			Expect(secondApp.Start()).To(Succeed())
 
-			_, _, err = app.HTTPGet("/")
+			_, _, err = secondApp.HTTPGet("/")
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
@@ -86,6 +88,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			appDir := filepath.Join("testdata", "vendored")
 			app, err := dagger.PackBuild(appDir, goURI, goModURI)
 			Expect(err).ToNot(HaveOccurred())
+			defer app.Destroy()
 
 			Expect(app.BuildLogs()).NotTo(MatchRegexp(goDownloading))
 
