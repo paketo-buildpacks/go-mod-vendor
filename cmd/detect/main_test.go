@@ -42,6 +42,9 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 					},
 				}, {
 					Name: GoDependency,
+					Metadata: buildplan.Metadata{
+						"build": true,
+					},
 				}}}
 
 			runDetectAndExpectBuildplan(factory, plan)
