@@ -262,70 +262,142 @@ go:
 	})
 
 	when("Contribute for tiny stack", func() {
-		it.Before(func() {
-			factory.AddPlan(buildpackplan.Plan{Name: mod.Dependency})
-			factory.Build.Stack = "org.cloudfoundry.stacks.tiny"
-			goModLayer = factory.Build.Layers.Layer(mod.Dependency)
-			goCacheLayer = factory.Build.Layers.Layer(mod.Cache)
-			launchLayer = factory.Build.Layers.Layer(mod.Launch)
-			buildPath = filepath.Join(goModLayer.Root, "bin", appName)
-			launchPath = filepath.Join(launchLayer.Root, "bin", appName)
+		//Remove this test when this id is depercated
+		when("the tiny id is org.cloudfoundry.stacks.tiny", func() {
+			it.Before(func() {
+				factory.AddPlan(buildpackplan.Plan{Name: mod.Dependency})
+				factory.Build.Stack = "org.cloudfoundry.stacks.tiny"
+				goModLayer = factory.Build.Layers.Layer(mod.Dependency)
+				goCacheLayer = factory.Build.Layers.Layer(mod.Cache)
+				launchLayer = factory.Build.Layers.Layer(mod.Launch)
+				buildPath = filepath.Join(goModLayer.Root, "bin", appName)
+				launchPath = filepath.Join(launchLayer.Root, "bin", appName)
 
-			contributor = mod.NewContributor(factory.Build, mockRunner)
-		})
+				contributor = mod.NewContributor(factory.Build, mockRunner)
+			})
 
-		it.After(func() {
-			if os.Getenv("BP_GO_TARGETS") != "" {
-				os.Unsetenv("BP_GO_TARGETS")
-			}
+			it.After(func() {
+				if os.Getenv("BP_GO_TARGETS") != "" {
+					os.Unsetenv("BP_GO_TARGETS")
+				}
 
-			Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
-				Processes: []layers.Process{
-					{
-						Type:    "web",
-						Command: launchPath,
-						Direct:  true,
+				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+					Processes: []layers.Process{
+						{
+							Type:    "web",
+							Command: launchPath,
+							Direct:  true,
+						},
 					},
-				},
-			}))
+				}))
 
-			Expect(goModLayer).To(test.HaveLayerMetadata(false, true, false))
-			Expect(launchLayer).To(test.HaveLayerMetadata(false, false, true))
-		})
+				Expect(goModLayer).To(test.HaveLayerMetadata(false, true, false))
+				Expect(launchLayer).To(test.HaveLayerMetadata(false, false, true))
+			})
 
-		when("The app is NOT vendored", func() {
-			it("runs `go install`, gets app name and contributes the start command", func() {
-				mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
+			when("The app is NOT vendored", func() {
+				it("runs `go install`, gets app name and contributes the start command", func() {
+					mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
 
-				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
-				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
 
-				mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
+					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
-				mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Do(func(_ ...interface{}) {
-					Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+					mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Do(func(_ ...interface{}) {
+						Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+					})
+
+					Expect(contributor.Contribute()).To(Succeed())
 				})
+			})
 
-				Expect(contributor.Contribute()).To(Succeed())
+			when("The app is vendored", func() {
+				it("runs `go install`, gets app name and contributes the start command", func() {
+					vendorDir := filepath.Join(factory.Build.Application.Root, "vendor")
+					os.MkdirAll(vendorDir, 0666)
+					defer os.RemoveAll(vendorDir)
+
+					mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
+
+					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+
+					mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-mod=vendor").Do(func(_ ...interface{}) {
+						Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+					})
+
+					Expect(contributor.Contribute()).To(Succeed())
+				})
 			})
 		})
 
-		when("The app is vendored", func() {
-			it("runs `go install`, gets app name and contributes the start command", func() {
-				vendorDir := filepath.Join(factory.Build.Application.Root, "vendor")
-				os.MkdirAll(vendorDir, 0666)
-				defer os.RemoveAll(vendorDir)
+		when("the tiny id is io.paketo.stacks.tiny", func() {
+			it.Before(func() {
+				factory.AddPlan(buildpackplan.Plan{Name: mod.Dependency})
+				factory.Build.Stack = "io.paketo.stacks.tiny"
+				goModLayer = factory.Build.Layers.Layer(mod.Dependency)
+				goCacheLayer = factory.Build.Layers.Layer(mod.Cache)
+				launchLayer = factory.Build.Layers.Layer(mod.Launch)
+				buildPath = filepath.Join(goModLayer.Root, "bin", appName)
+				launchPath = filepath.Join(launchLayer.Root, "bin", appName)
 
-				mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
+				contributor = mod.NewContributor(factory.Build, mockRunner)
+			})
 
-				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
-				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+			it.After(func() {
+				if os.Getenv("BP_GO_TARGETS") != "" {
+					os.Unsetenv("BP_GO_TARGETS")
+				}
 
-				mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-mod=vendor").Do(func(_ ...interface{}) {
-					Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+				Expect(factory.Build.Layers).To(test.HaveApplicationMetadata(layers.Metadata{
+					Processes: []layers.Process{
+						{
+							Type:    "web",
+							Command: launchPath,
+							Direct:  true,
+						},
+					},
+				}))
+
+				Expect(goModLayer).To(test.HaveLayerMetadata(false, true, false))
+				Expect(launchLayer).To(test.HaveLayerMetadata(false, false, true))
+			})
+
+			when("The app is NOT vendored", func() {
+				it("runs `go install`, gets app name and contributes the start command", func() {
+					mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
+
+					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+
+					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
+
+					mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Do(func(_ ...interface{}) {
+						Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+					})
+
+					Expect(contributor.Contribute()).To(Succeed())
 				})
+			})
 
-				Expect(contributor.Contribute()).To(Succeed())
+			when("The app is vendored", func() {
+				it("runs `go install`, gets app name and contributes the start command", func() {
+					vendorDir := filepath.Join(factory.Build.Application.Root, "vendor")
+					os.MkdirAll(vendorDir, 0666)
+					defer os.RemoveAll(vendorDir)
+
+					mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
+
+					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+
+					mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-mod=vendor").Do(func(_ ...interface{}) {
+						Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+					})
+
+					Expect(contributor.Contribute()).To(Succeed())
+				})
 			})
 		})
 	})
