@@ -130,7 +130,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		it("build should fail with a descriptive error", func() {
 			_, err := dagger.PackBuild(filepath.Join("testdata", "nomain_app"), goURI, goModURI)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("`go install` failed to install executable(s) in /layers/paketo-buildpacks_go-mod/go-mod/bin"))
+			Expect(err.Error()).To(ContainSubstring("`go install` failed to install executable(s) in /layers/paketo-buildpacks_go-mod/app-binary/bin"))
 		})
 	})
 }

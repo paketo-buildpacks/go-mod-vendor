@@ -91,6 +91,7 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 
 				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+				mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 				mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -117,6 +118,7 @@ go:
 
 					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -153,6 +155,7 @@ go:
 				it("runs `go install` with ldflags before targets", func() {
 					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -189,6 +192,7 @@ go:
 
 							mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 							mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+							mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 							mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -207,6 +211,7 @@ go:
 
 						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 						mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+						mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 						mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -228,6 +233,7 @@ go:
 
 						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 						mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+						mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 						mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -251,6 +257,7 @@ go:
 
 				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+				mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 				mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-mod=vendor").Do(func(_ ...interface{}) {
 					Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
@@ -299,6 +306,7 @@ go:
 
 				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+				mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 				mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -320,6 +328,7 @@ go:
 
 				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+				mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 				mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-mod=vendor").Do(func(_ ...interface{}) {
 					Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
