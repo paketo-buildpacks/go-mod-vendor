@@ -184,7 +184,7 @@ go:
 							factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
 								"BP_GO_TARGETS": "./path/to/first/:./path/to/second/",
 							}
-							factory.Build.Platform.EnvironmentVariables.SetAll()
+							Expect(factory.Build.Platform.EnvironmentVariables.SetAll()).To(Succeed())
 
 							mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 							mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
@@ -203,7 +203,7 @@ go:
 						factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
 							"BP_GO_TARGETS": "./path/to/first:./path/to/second",
 						}
-						factory.Build.Platform.EnvironmentVariables.SetAll()
+						Expect(factory.Build.Platform.EnvironmentVariables.SetAll()).To(Succeed())
 
 						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 						mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
@@ -246,7 +246,7 @@ go:
 		when("The app is vendored", func() {
 			it("runs `go install`, gets app name and contributes the start command", func() {
 				vendorDir := filepath.Join(factory.Build.Application.Root, "vendor")
-				os.MkdirAll(vendorDir, 0666)
+				Expect(os.MkdirAll(vendorDir, 0666)).To(Succeed())
 				defer os.RemoveAll(vendorDir)
 
 				mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
@@ -316,7 +316,7 @@ go:
 		when("The app is vendored", func() {
 			it("runs `go install`, gets app name and contributes the start command", func() {
 				vendorDir := filepath.Join(factory.Build.Application.Root, "vendor")
-				os.MkdirAll(vendorDir, 0666)
+				Expect(os.MkdirAll(vendorDir, 0666)).To(Succeed())
 				defer os.RemoveAll(vendorDir)
 
 				mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
