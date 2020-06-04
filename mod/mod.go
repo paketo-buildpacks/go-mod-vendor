@@ -190,7 +190,7 @@ func (c Contributor) setStartCommand() error {
 			{
 				Type:    "web",
 				Command: launchPath,
-				Direct:  c.context.Stack == "org.cloudfoundry.stacks.tiny",
+				Direct:  c.context.Stack == "org.cloudfoundry.stacks.tiny" || c.context.Stack == "io.paketo.stacks.tiny",
 			},
 		},
 	})
