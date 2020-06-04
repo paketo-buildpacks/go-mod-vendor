@@ -173,19 +173,23 @@ go:
 			})
 
 			when("the target is not at the root directory", func() {
+				var otherBuildPath, otherLaunchPath string
+
 				it.Before(func() {
 					buildPath = filepath.Join(goModLayer.Root, "bin", "first")
 					launchPath = filepath.Join(launchLayer.Root, "bin", "first")
+					otherBuildPath = filepath.Join(goModLayer.Root, "bin", "second")
+					otherLaunchPath = filepath.Join(launchLayer.Root, "bin", "second")
 				})
 
 				when("`BP_GO_TARGETS` environment variable is set", func() {
 					when("`BP_GO_TARGETS` value contains a trailing forward slash", func() {
-						it("runs `go install`, gets app name and contributes the start command", func() {
+						it("runs `go install` on all targets and contributes all binaries, gets app name from the first target, contributes the start command", func() {
 
 							factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
 								"BP_GO_TARGETS": "./path/to/first/:./path/to/second/",
 							}
-							factory.Build.Platform.EnvironmentVariables.SetAll()
+							Expect(factory.Build.Platform.EnvironmentVariables.SetAll()).To(Succeed())
 
 							mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 							mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
@@ -194,12 +198,14 @@ go:
 
 							mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first/", "./path/to/second/").Do(func(_ ...interface{}) {
 								Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+								Expect(helper.WriteFile(otherBuildPath, os.ModePerm, "")).To(Succeed())
 							})
 
 							Expect(contributor.Contribute()).To(Succeed())
+							Expect(otherLaunchPath).To(BeAnExistingFile())
 						})
 					})
-					it("runs `go install`, gets app name and contributes the start command", func() {
+					it("runs `go install` on all targets and contributes all binaries, gets app name from the first target, contributes the start command", func() {
 						factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
 							"BP_GO_TARGETS": "./path/to/first:./path/to/second",
 						}
@@ -212,9 +218,11 @@ go:
 
 						mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first", "./path/to/second").Do(func(_ ...interface{}) {
 							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+							Expect(helper.WriteFile(otherBuildPath, os.ModePerm, "")).To(Succeed())
 						})
 
 						Expect(contributor.Contribute()).To(Succeed())
+						Expect(otherLaunchPath).To(BeAnExistingFile())
 					})
 				})
 

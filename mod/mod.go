@@ -126,21 +126,34 @@ func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 		return err
 	}
 
+	binaries, err := c.getBinaryNames()
+	if err != nil {
+		return err
+	}
+
 	// go-install installs executables in $GOPATH/bin when not overridden by GOBIN.
-	binPath := filepath.Join(c.goModLayer.Root, "bin", c.appName)
-	newBinPath := filepath.Join(c.launchLayer.Root, "bin", c.appName)
-
-	if _, err := os.Stat(binPath); os.IsNotExist(err) {
-		c.logger.Info("`go install` failed to install executable(s) in %s",
-			filepath.Join(c.goModLayer.Root, "bin"))
+	modBinPath := filepath.Join(c.goModLayer.Root, "bin")
+	launchBinPath := filepath.Join(c.launchLayer.Root, "bin")
+	if err := os.MkdirAll(launchBinPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(c.launchLayer.Root, "bin"), os.ModePerm); err != nil {
-		return err
+	for _, bin := range binaries {
+		binPath := filepath.Join(modBinPath, bin)
+		newBinPath := filepath.Join(launchBinPath, bin)
+
+		if _, err := os.Stat(binPath); os.IsNotExist(err) {
+			c.logger.Info("`go install` failed to install executable(s) in %s",
+				modBinPath)
+			return err
+		}
+
+		if err := os.Rename(binPath, newBinPath); err != nil {
+			return err
+		}
 	}
 
-	return os.Rename(binPath, newBinPath)
+	return nil
 }
 
 func (c Contributor) ContributeCacheLayer(_ layers.Layer) error {
@@ -164,21 +177,35 @@ func (c Contributor) Cleanup() error {
 }
 
 func (c *Contributor) setAppName() error {
+	bins, err := c.getBinaryNames()
+	if err != nil {
+		return err
+	}
+
+	c.appName = bins[0]
+	return nil
+}
+
+func (c *Contributor) getBinaryNames() ([]string, error) {
+	var binaries []string
 	if len(c.config.Targets) != 0 {
-		appTarget := strings.TrimSuffix(c.config.Targets[0], "/")
-		targetSegments := strings.Split(appTarget, "/")
-		appName := targetSegments[len(targetSegments)-1]
-		c.appName = appName
+		for _, t := range c.config.Targets {
+			appTarget := strings.TrimSuffix(t, "/")
+			targetSegments := strings.Split(appTarget, "/")
+			binaries = append(binaries, targetSegments[len(targetSegments) - 1])
+		}
+	} else if c.appName != "" {
+		binaries = []string{c.appName}
 	} else {
 		output, err := c.runner.RunWithOutput("go", c.appRoot, false, "list", "-m")
 		if err != nil {
-			return err
+			return []string{}, err
 		}
 
-		c.appName = parseAppNameFromOutput(output)
+		binaries = []string{parseAppNameFromOutput(output)}
 	}
 
-	return nil
+	return binaries, nil
 }
 
 func (c Contributor) setStartCommand() error {
