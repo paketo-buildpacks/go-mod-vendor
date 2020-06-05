@@ -140,6 +140,19 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		})
 	})
 
+	when("the app has multiple targets", func() {
+		it("should build a working OCI image for a simple app with all target binaries contributed", func() {
+			app, err = dagger.PackBuild(filepath.Join("testdata", "multiple_targets"), goURI, goModURI)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(app.Start()).To(Succeed())
+
+			body, _, err := app.HTTPGet("/")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(body).To(ContainSubstring("Hello From Helper!"))
+		})
+	})
+
 	when("the app specifies ldflags", func() {
 		it("should build the app with those build flags", func() {
 			app, err := dagger.PackBuild(filepath.Join("testdata", "ldflags"), goURI, goModURI)
