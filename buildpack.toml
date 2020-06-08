@@ -17,7 +17,4 @@ id = "org.cloudfoundry.stacks.cflinuxfs3"
 id = "io.buildpacks.stacks.bionic"
 
 [[stacks]]
-id = "org.cloudfoundry.stacks.tiny"
-
-[[stacks]]
 id = "io.paketo.stacks.tiny"
