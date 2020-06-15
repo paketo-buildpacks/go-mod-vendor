@@ -56,7 +56,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 	})
 
 	const (
-		goFinding     = "go: finding github.com/"
 		goDownloading = "go: downloading github.com/"
 		goExtracting  = "go: extracting github.com/"
 	)
@@ -95,8 +94,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			firstApp, err = dagger.PackBuild(appDir, goURI, goModURI)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(firstApp.BuildLogs()).To(MatchRegexp(goFinding), firstApp.BuildLogs())
-
 			_, imageID, _, err := firstApp.Info()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -104,7 +101,6 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			repeatBuildLogs := secondApp.BuildLogs()
-			Expect(repeatBuildLogs).NotTo(MatchRegexp(goFinding))
 			Expect(repeatBuildLogs).To(ContainSubstring(`Adding cache layer 'paketo-buildpacks/go-mod:go-cache'`))
 
 			Expect(secondApp.Start()).To(Succeed())
