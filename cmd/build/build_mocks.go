@@ -34,6 +34,7 @@ func (m *MockGoModContributor) EXPECT() *MockGoModContributorMockRecorder {
 
 // Contribute mocks base method
 func (m *MockGoModContributor) Contribute() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Contribute")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -41,11 +42,13 @@ func (m *MockGoModContributor) Contribute() error {
 
 // Contribute indicates an expected call of Contribute
 func (mr *MockGoModContributorMockRecorder) Contribute() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Contribute", reflect.TypeOf((*MockGoModContributor)(nil).Contribute))
 }
 
 // Cleanup mocks base method
 func (m *MockGoModContributor) Cleanup() error {
+	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Cleanup")
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -53,5 +56,6 @@ func (m *MockGoModContributor) Cleanup() error {
 
 // Cleanup indicates an expected call of Cleanup
 func (mr *MockGoModContributorMockRecorder) Cleanup() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockGoModContributor)(nil).Cleanup))
 }

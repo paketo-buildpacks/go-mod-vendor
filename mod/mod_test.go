@@ -33,7 +33,6 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 		factory      *test.BuildFactory
 		mockRunner   *MockRunner
 		appRoot      string
-		buildPath    string
 		launchPath   string
 		goModLayer   layers.Layer
 		goCacheLayer layers.Layer
@@ -59,7 +58,6 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 			goModLayer = factory.Build.Layers.Layer(mod.Dependency)
 			goCacheLayer = factory.Build.Layers.Layer(mod.Cache)
 			launchLayer = factory.Build.Layers.Layer(mod.Launch)
-			buildPath = filepath.Join(goModLayer.Root, "bin", appName)
 			launchPath = filepath.Join(launchLayer.Root, "bin", appName)
 
 			contributor = mod.NewContributor(factory.Build, mockRunner)
@@ -91,11 +89,12 @@ func testGoMod(t *testing.T, when spec.G, it spec.S) {
 
 				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+				mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 				mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
 				mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Do(func(_ ...interface{}) {
-					Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+					Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 				})
 
 				Expect(contributor.Contribute()).To(Succeed())
@@ -117,6 +116,7 @@ go:
 
 					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -128,7 +128,7 @@ go:
 							`-ldflags=-X 'main.linker_flag=linked_flag' -X 'main.other_linker_flag=other_linked_flag'`,
 						).
 						Do(func(_ ...interface{}) {
-							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+							Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 						})
 
 					Expect(contributor.Contribute()).To(Succeed())
@@ -146,13 +146,13 @@ go:
     main.other_linker_flag: other_linked_flag`),
 						os.FileMode(0666))).To(Succeed())
 
-					buildPath = filepath.Join(goModLayer.Root, "bin", "first")
 					launchPath = filepath.Join(launchLayer.Root, "bin", "first")
 				})
 
 				it("runs `go install` with ldflags before targets", func() {
 					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
@@ -165,7 +165,7 @@ go:
 							"./path/to/first",
 						).
 						Do(func(_ ...interface{}) {
-							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+							Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 						})
 
 					Expect(contributor.Contribute()).To(Succeed())
@@ -174,7 +174,6 @@ go:
 
 			when("the target is not at the root directory", func() {
 				it.Before(func() {
-					buildPath = filepath.Join(goModLayer.Root, "bin", "first")
 					launchPath = filepath.Join(launchLayer.Root, "bin", "first")
 				})
 
@@ -185,15 +184,16 @@ go:
 							factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
 								"BP_GO_TARGETS": "./path/to/first/:./path/to/second/",
 							}
-							factory.Build.Platform.EnvironmentVariables.SetAll()
+							Expect(factory.Build.Platform.EnvironmentVariables.SetAll()).To(Succeed())
 
 							mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 							mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+							mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 							mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
 							mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first/", "./path/to/second/").Do(func(_ ...interface{}) {
-								Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+								Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 							})
 
 							Expect(contributor.Contribute()).To(Succeed())
@@ -203,15 +203,16 @@ go:
 						factory.Build.Platform.EnvironmentVariables = platform.EnvironmentVariables{
 							"BP_GO_TARGETS": "./path/to/first:./path/to/second",
 						}
-						factory.Build.Platform.EnvironmentVariables.SetAll()
+						Expect(factory.Build.Platform.EnvironmentVariables.SetAll()).To(Succeed())
 
 						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 						mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+						mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 						mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
 						mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first", "./path/to/second").Do(func(_ ...interface{}) {
-							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+							Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 						})
 
 						Expect(contributor.Contribute()).To(Succeed())
@@ -228,11 +229,12 @@ go:
 
 						mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 						mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+						mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 						mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
 						mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "./path/to/first").Do(func(_ ...interface{}) {
-							Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+							Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 						})
 
 						Expect(contributor.Contribute()).To(Succeed())
@@ -244,16 +246,17 @@ go:
 		when("The app is vendored", func() {
 			it("runs `go install`, gets app name and contributes the start command", func() {
 				vendorDir := filepath.Join(factory.Build.Application.Root, "vendor")
-				os.MkdirAll(vendorDir, 0666)
+				Expect(os.MkdirAll(vendorDir, 0666)).To(Succeed())
 				defer os.RemoveAll(vendorDir)
 
 				mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
 
 				mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 				mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+				mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 				mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-mod=vendor").Do(func(_ ...interface{}) {
-					Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+					Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 				})
 
 				Expect(contributor.Contribute()).To(Succeed())
@@ -269,7 +272,6 @@ go:
 				goModLayer = factory.Build.Layers.Layer(mod.Dependency)
 				goCacheLayer = factory.Build.Layers.Layer(mod.Cache)
 				launchLayer = factory.Build.Layers.Layer(mod.Launch)
-				buildPath = filepath.Join(goModLayer.Root, "bin", appName)
 				launchPath = filepath.Join(launchLayer.Root, "bin", appName)
 
 				contributor = mod.NewContributor(factory.Build, mockRunner)
@@ -300,11 +302,12 @@ go:
 
 					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 					mockRunner.EXPECT().Run("go", appRoot, false, "mod", "download")
 
 					mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry").Do(func(_ ...interface{}) {
-						Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+						Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 					})
 
 					Expect(contributor.Contribute()).To(Succeed())
@@ -314,16 +317,17 @@ go:
 			when("The app is vendored", func() {
 				it("runs `go install`, gets app name and contributes the start command", func() {
 					vendorDir := filepath.Join(factory.Build.Application.Root, "vendor")
-					os.MkdirAll(vendorDir, 0666)
+					Expect(os.MkdirAll(vendorDir, 0666)).To(Succeed())
 					defer os.RemoveAll(vendorDir)
 
 					mockRunner.EXPECT().RunWithOutput("go", appRoot, false, "list", "-m").Return(appName, nil)
 
 					mockRunner.EXPECT().SetEnv("GOPATH", goModLayer.Root)
 					mockRunner.EXPECT().SetEnv("GOCACHE", goCacheLayer.Root)
+					mockRunner.EXPECT().SetEnv("GOBIN", filepath.Join(launchLayer.Root, "bin"))
 
 					mockRunner.EXPECT().Run("go", appRoot, false, "install", "-buildmode", "pie", "-tags", "cloudfoundry", "-mod=vendor").Do(func(_ ...interface{}) {
-						Expect(helper.WriteFile(buildPath, os.ModePerm, "")).To(Succeed())
+						Expect(helper.WriteFile(launchPath, os.ModePerm, "")).To(Succeed())
 					})
 
 					Expect(contributor.Contribute()).To(Succeed())

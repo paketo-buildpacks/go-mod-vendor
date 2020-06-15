@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -30,8 +29,7 @@ func testDetect(t *testing.T, when spec.G, it spec.S) {
 
 	when("there is a go.mod", func() {
 		it("should add go-mod to the buildplan", func() {
-			goModString := fmt.Sprintf("This is a go mod file")
-			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "go.mod"), goModString)
+			test.WriteFile(t, filepath.Join(factory.Detect.Application.Root, "go.mod"), "This is a go mod file")
 
 			plan := buildplan.Plan{
 				Provides: []buildplan.Provided{{Name: mod.Dependency}},

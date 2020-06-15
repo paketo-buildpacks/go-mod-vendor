@@ -113,12 +113,20 @@ func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 		for ldflagKey, ldflagValue := range c.config.LDFlags {
 			ldflags = append(ldflags, fmt.Sprintf(`-X '%s=%s'`, ldflagKey, ldflagValue))
 		}
-		sort.Sort(sort.StringSlice(ldflags))
+		sort.Strings(ldflags)
 		args = append(args, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
 	}
 
-	for _, target := range c.config.Targets {
-		args = append(args, target)
+	args = append(args, c.config.Targets...)
+
+	// go-install installs executables in $GOBIN, the $GOBIN is set to the application launch layer.
+	if err := os.MkdirAll(filepath.Join(c.launchLayer.Root, "bin"), os.ModePerm); err != nil {
+		return err
+	}
+
+	err := c.runner.SetEnv("GOBIN", filepath.Join(c.launchLayer.Root, "bin"))
+	if err != nil {
+		return err
 	}
 
 	c.logger.Info("Running `go install`")
@@ -126,21 +134,13 @@ func (c Contributor) ContributeBinLayer(_ layers.Layer) error {
 		return err
 	}
 
-	// go-install installs executables in $GOPATH/bin when not overridden by GOBIN.
-	binPath := filepath.Join(c.goModLayer.Root, "bin", c.appName)
-	newBinPath := filepath.Join(c.launchLayer.Root, "bin", c.appName)
-
-	if _, err := os.Stat(binPath); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(c.launchLayer.Root, "bin", c.appName)); os.IsNotExist(err) {
 		c.logger.Info("`go install` failed to install executable(s) in %s",
-			filepath.Join(c.goModLayer.Root, "bin"))
+			filepath.Join(c.launchLayer.Root, "bin"))
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Join(c.launchLayer.Root, "bin"), os.ModePerm); err != nil {
-		return err
-	}
-
-	return os.Rename(binPath, newBinPath)
+	return nil
 }
 
 func (c Contributor) ContributeCacheLayer(_ layers.Layer) error {
