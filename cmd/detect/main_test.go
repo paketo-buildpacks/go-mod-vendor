@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/buildpack/libbuildpack/buildplan"
-	"github.com/paketo-buildpacks/go-mod/mod"
+	"github.com/paketo-buildpacks/go-mod-vendor/mod"
 
 	. "github.com/onsi/gomega"
 

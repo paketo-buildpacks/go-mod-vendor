@@ -1,10 +1,9 @@
 api = "0.2"
 
 [buildpack]
-id = "paketo-buildpacks/go-mod"
-name = "Go Mod Buildpack"
-version = "{{ .Version }}"
-homepage = "https://github.com/paketo-buildpacks/go-mod"
+id = "paketo-buildpacks/go-mod-vendor"
+name = "Go Mod Vendor Buildpack"
+homepage = "https://github.com/paketo-buildpacks/go-mod-vendor"
 
 [metadata]
 include_files = ["bin/build","bin/detect","buildpack.toml"]
