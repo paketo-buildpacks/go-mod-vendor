@@ -25,6 +25,12 @@ modules deal with vendoring:
 > Once vendoring is enabled, packages are loaded from the `vendor` directory
 > instead of accessing the network or the module cache.
 
+## Integration
+
+The proposed buildpack requires `go` and provides none.
+
+The former `go-mod` buildpack used to provide `go-mod`.
+
 ## Renaming
 
 The buildpack will be renamed to `go-mod-vendor` from `go-mod`. This will more
