@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Dependency = "go-mod-vendor"
+	Dependency = "go-mod"
 	Cache      = "go-cache"
 	Launch     = "app-binary"
 )
