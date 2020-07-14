@@ -1,33 +1,33 @@
 # Go Mod Vendor Cloud Native Buildpack
 
 The Go Mod Vendor CNB builds a Go application binary, using the [`go
-mod`](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more)
-functionality provided by the Go Compiler CNB to package dependencies.
+mod vendor`](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more)
+functionality provided by the Go Distribution CNB to package dependencies.
 
 ## Integration
 
-The Go Mod Vendor CNB provides go-mod-vendor as a dependency. Downstream
-buildpacks can require the go-mod-vendor dependency by generating a [Build Plan
+The Go Mod Vendor CNB provides go-mod as a dependency. Downstream
+buildpacks can require the go-mod dependency by generating a [Build Plan
 TOML](https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
 file that looks like the following:
 
 ```toml
 [[requires]]
 
-  # The name of the Go Mod dependency is "go-mod-vendor". This value is
+  # The name of the Go Mod Vendor buildpack dependency is "go-mod". This value is
   # considered part of the public API for the buildpack and will not change
   # without a plan for deprecation.
-  name = "go-mod-vendor"
+  name = "go-mod"
 
   # Note: The version field is unsupported as there is no version for a set of
-  # go-mod-vendor.
+  # go-mod.
 
-  # The Go Mod buildpack supports some non-required metadata options.
+  # The Go Mod Vendor buildpack supports some non-required metadata options.
   [requires.metadata]
 
-    # Setting the build flag to true will ensure that the Go Mod
+    # Setting the build flag to true will ensure that the Go Mod Vendor buildpack
     # depdendency is available on the $PATH for subsequent buildpacks during
-    # their build phase. If you are writing a buildpack that needs to run Go Mod
+    # their build phase. If you are writing a buildpack that needs to run Go Mod Vendor
     # during its build process, this flag should be set to true.
     build = true
 ```
