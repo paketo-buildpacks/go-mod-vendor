@@ -3,6 +3,7 @@ api = "0.2"
 [buildpack]
 id = "paketo-buildpacks/go-mod-vendor"
 name = "Go Mod Vendor Buildpack"
+version = "{{ .Version }}"
 homepage = "https://github.com/paketo-buildpacks/go-mod-vendor"
 
 [metadata]
