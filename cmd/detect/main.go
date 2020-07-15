@@ -9,7 +9,7 @@ import (
 
 	"github.com/cloudfoundry/libcfbuildpack/helper"
 
-	"github.com/paketo-buildpacks/go-mod/mod"
+	"github.com/paketo-buildpacks/go-mod-vendor/mod"
 
 	"github.com/buildpack/libbuildpack/buildplan"
 	"github.com/cloudfoundry/libcfbuildpack/detect"
