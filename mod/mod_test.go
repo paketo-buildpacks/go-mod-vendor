@@ -16,7 +16,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
-	"github.com/paketo-buildpacks/go-mod/mod"
+	"github.com/paketo-buildpacks/go-mod-vendor/mod"
 )
 
 //go:generate mockgen -source=mod.go -destination=mocks_test.go -package=mod_test

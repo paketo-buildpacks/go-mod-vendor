@@ -6,9 +6,9 @@ import (
 
 	"github.com/cloudfoundry/libcfbuildpack/buildpackplan"
 
-	"github.com/paketo-buildpacks/go-mod/utils"
+	"github.com/paketo-buildpacks/go-mod-vendor/utils"
 
-	"github.com/paketo-buildpacks/go-mod/mod"
+	"github.com/paketo-buildpacks/go-mod-vendor/mod"
 
 	"github.com/cloudfoundry/libcfbuildpack/build"
 )

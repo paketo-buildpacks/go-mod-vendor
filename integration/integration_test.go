@@ -95,7 +95,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 
 		body, _, err := app.HTTPGet("/")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(body).To(MatchRegexp("PATH=.*/layers/paketo-buildpacks_go-mod/app-binary/bin:"))
+		Expect(body).To(MatchRegexp("PATH=.*/layers/paketo-buildpacks_go-mod-vendor/app-binary/bin:"))
 	})
 
 	when("the app is pushed twice", func() {
@@ -128,7 +128,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 			Expect(err).ToNot(HaveOccurred())
 
 			repeatBuildLogs := secondApp.BuildLogs()
-			Expect(repeatBuildLogs).To(ContainSubstring(`Adding cache layer 'paketo-buildpacks/go-mod:go-cache'`))
+			Expect(repeatBuildLogs).To(ContainSubstring(`Adding cache layer 'paketo-buildpacks/go-mod-vendor:go-cache'`))
 
 			Expect(secondApp.Start()).To(Succeed())
 
@@ -194,7 +194,7 @@ func testIntegration(t *testing.T, when spec.G, it spec.S) {
 		it("build should fail with a descriptive error", func() {
 			_, err := dagger.PackBuild(filepath.Join("testdata", "nomain_app"), goURI, goModURI)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("`go install` failed to install executable(s) in /layers/paketo-buildpacks_go-mod/app-binary/bin"))
+			Expect(err.Error()).To(ContainSubstring("`go install` failed to install executable(s) in /layers/paketo-buildpacks_go-mod-vendor/app-binary/bin"))
 		})
 	})
 }
