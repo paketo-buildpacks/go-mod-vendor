@@ -11,6 +11,7 @@ require (
 	github.com/golang/mock v1.4.3
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/onsi/gomega v1.10.1
+	github.com/paketo-buildpacks/go-build v0.0.10
 	github.com/paketo-buildpacks/occam v0.0.16
 	github.com/paketo-buildpacks/packit v0.2.2
 	github.com/pkg/errors v0.9.1

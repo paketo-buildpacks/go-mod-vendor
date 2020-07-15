@@ -15,14 +15,14 @@ func Detect() packit.DetectFunc {
 			if os.IsNotExist(err) {
 				return packit.DetectResult{}, packit.Fail
 			}
-			return packit.DetectResult{}, fmt.Errorf("Failed to stat go.mod : %w", err)
+			return packit.DetectResult{}, fmt.Errorf("failed to stat go.mod: %w", err)
 		}
 
 		return packit.DetectResult{
 			Plan: packit.BuildPlan{
 				Requires: []packit.BuildPlanRequirement{
 					{
-						Name: "go-dist",
+						Name: "go",
 						Metadata: map[string]interface{}{
 							"build": true,
 						},
