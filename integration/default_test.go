@@ -10,6 +10,7 @@ import (
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
+	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
 func testDefault(t *testing.T, context spec.G, it spec.S) {
@@ -62,12 +63,12 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				Execute(name, source)
 			Expect(err).ToNot(HaveOccurred(), logs.String)
 
-			// Expect(logs).To(ContainLines(
-			// 	MatchRegexp(fmt.Sprintf(`%s \d+\.\d+\.\d+`, settings.Buildpack.Name)),
-			// 	"  Executing build process",
-			// 	"    Running 'go mod vendor'",
-			// 	MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
-			// ))
+			Expect(logs).To(ContainLines(
+				MatchRegexp(fmt.Sprintf(`%s \d+\.\d+\.\d+`, settings.Buildpack.Name)),
+				"  Executing build process",
+				"    Running 'go mod vendor'",
+				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
+			))
 
 			container, err = docker.Container.Run.
 				WithCommand("ls -alR /workspace").

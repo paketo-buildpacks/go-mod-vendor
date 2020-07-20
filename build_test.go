@@ -55,6 +55,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		result, err := build(packit.BuildContext{
 			Layers:     packit.Layers{Path: layersDir},
 			WorkingDir: workingDir,
+			BuildpackInfo: packit.BuildpackInfo{
+				Name:    "Some Buildpack",
+				Version: "some-version",
+			},
 		})
 		Expect(err).NotTo(HaveOccurred())
 
@@ -77,7 +81,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(buildProcess.ExecuteCall.Receives.Path).To(Equal(filepath.Join(layersDir, "mod-cache")))
 		Expect(buildProcess.ExecuteCall.Receives.WorkingDir).To(Equal(workingDir))
 
-		Expect(logs.String()).To(ContainSubstring("Executing build process"))
+		Expect(logs.String()).To(ContainSubstring("Some Buildpack some-version"))
 	})
 
 	context("failure cases", func() {
