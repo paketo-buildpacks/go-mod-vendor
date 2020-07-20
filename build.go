@@ -14,12 +14,12 @@ func Build(
 	logs LogEmitter,
 ) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
+		logs.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
+
 		modCacheLayer, err := context.Layers.Get("mod-cache", packit.CacheLayer)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
-
-		logs.Process("Executing build process")
 
 		err = buildProcess.Execute(modCacheLayer.Path, context.WorkingDir)
 		if err != nil {

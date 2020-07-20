@@ -6,6 +6,7 @@ import (
 	"github.com/cloudfoundry/packit/pexec"
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
 	"github.com/paketo-buildpacks/packit"
+	"github.com/paketo-buildpacks/packit/chronos"
 )
 
 func main() {
@@ -13,7 +14,7 @@ func main() {
 	packit.Run(
 		gomodvendor.Detect(),
 		gomodvendor.Build(
-			gomodvendor.NewModVendor(pexec.NewExecutable("go")),
+			gomodvendor.NewModVendor(pexec.NewExecutable("go"), logEmitter, chronos.DefaultClock),
 			logEmitter,
 		),
 	)
