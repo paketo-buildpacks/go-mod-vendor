@@ -52,33 +52,33 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		}))
 	})
 
+	context("go.mod does not exist in the working directory", func() {
+		it.Before(func() {
+			Expect(os.RemoveAll(filepath.Join(workingDir, "go.mod"))).To(Succeed())
+		})
+
+		it("fails detection", func() {
+			_, err := detect(packit.DetectContext{
+				WorkingDir: workingDir,
+			})
+			Expect(err).To(MatchError(packit.Fail))
+		})
+	})
+
+	context("when there is a vendor directory in the working directory", func() {
+		it.Before(func() {
+			Expect(os.MkdirAll(filepath.Join(workingDir, "vendor"), os.ModePerm)).To(Succeed())
+		})
+
+		it("fails detection", func() {
+			_, err := detect(packit.DetectContext{
+				WorkingDir: workingDir,
+			})
+			Expect(err).To(MatchError(packit.Fail))
+		})
+	})
+
 	context("failure cases", func() {
-		context("go.mod does not exist", func() {
-			it.Before(func() {
-				Expect(os.RemoveAll(filepath.Join(workingDir, "go.mod"))).To(Succeed())
-			})
-
-			it("fails detection", func() {
-				_, err := detect(packit.DetectContext{
-					WorkingDir: workingDir,
-				})
-				Expect(err).To(MatchError(packit.Fail))
-			})
-		})
-
-		context("when there is a vendor directory", func() {
-			it.Before(func() {
-				Expect(os.MkdirAll(filepath.Join(workingDir, "vendor"), os.ModePerm)).To(Succeed())
-			})
-
-			it("fails detection", func() {
-				_, err := detect(packit.DetectContext{
-					WorkingDir: workingDir,
-				})
-				Expect(err).To(MatchError(packit.Fail))
-			})
-		})
-
 		context("the workspace directory cannot be accessed", func() {
 			it.Before(func() {
 				Expect(os.Chmod(workingDir, 0000)).To(Succeed())
