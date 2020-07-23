@@ -18,6 +18,15 @@ func Detect() packit.DetectFunc {
 			return packit.DetectResult{}, fmt.Errorf("failed to stat go.mod: %w", err)
 		}
 
+		_, err = os.Stat(filepath.Join(context.WorkingDir, "vendor"))
+		if err == nil {
+			return packit.DetectResult{}, packit.Fail
+		} else {
+			if !os.IsNotExist(err) {
+				return packit.DetectResult{}, fmt.Errorf("failed to stat vendor directory: %w", err)
+			}
+		}
+
 		return packit.DetectResult{
 			Plan: packit.BuildPlan{
 				Requires: []packit.BuildPlanRequirement{
