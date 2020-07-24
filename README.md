@@ -1,8 +1,15 @@
 # Go Mod Vendor Cloud Native Buildpack
 
-The Go Mod Vendor CNB builds a Go application binary, using the [`go
-mod vendor`](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more)
-functionality provided by the Go Distribution CNB to package dependencies.
+The Go Mod Vendor CNB executes the [`go mod
+vendor`](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more)
+command in the app's working directory to make vendored copy of dependencies.
+
+## Integration
+
+The Go Mod Vendor CNB does not provide any dependencies. In order to
+execute the `go mod vendor` command, the buildpack requires the `go`
+dependency that can be provided by a buildpack like the [Go Distribution
+CNB](https://github.com/paketo-buildpacks/go-dist).
 
 ## Usage
 
