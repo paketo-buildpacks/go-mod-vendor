@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/cloudfoundry/packit/pexec"
@@ -30,15 +31,15 @@ func NewModVendor(executable Executable, logs LogEmitter, clock chronos.Clock) M
 }
 
 func (m ModVendor) Execute(path, workingDir string) error {
+	buffer := bytes.NewBuffer(nil)
+	args := []string{"mod", "vendor"}
 
 	m.logs.Process("Executing build process")
-	m.logs.Subprocess("Running 'go mod vendor'")
-
-	buffer := bytes.NewBuffer(nil)
+	m.logs.Subprocess("Running 'go %s'", strings.Join(args, " "))
 
 	duration, err := m.clock.Measure(func() error {
 		return m.executable.Execute(pexec.Execution{
-			Args:   []string{"mod", "vendor"},
+			Args:   args,
 			Env:    append(os.Environ(), fmt.Sprintf("GOPATH=%s", path)),
 			Dir:    workingDir,
 			Stdout: buffer,
