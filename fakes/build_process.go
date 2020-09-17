@@ -15,6 +15,18 @@ type BuildProcess struct {
 		}
 		Stub func(string, string) error
 	}
+	ShouldRunCall struct {
+		sync.Mutex
+		CallCount int
+		Receives  struct {
+			WorkingDir string
+		}
+		Returns struct {
+			Bool  bool
+			Error error
+		}
+		Stub func(string) (bool, error)
+	}
 }
 
 func (f *BuildProcess) Execute(param1 string, param2 string) error {
@@ -27,4 +39,14 @@ func (f *BuildProcess) Execute(param1 string, param2 string) error {
 		return f.ExecuteCall.Stub(param1, param2)
 	}
 	return f.ExecuteCall.Returns.Error
+}
+func (f *BuildProcess) ShouldRun(param1 string) (bool, error) {
+	f.ShouldRunCall.Lock()
+	defer f.ShouldRunCall.Unlock()
+	f.ShouldRunCall.CallCount++
+	f.ShouldRunCall.Receives.WorkingDir = param1
+	if f.ShouldRunCall.Stub != nil {
+		return f.ShouldRunCall.Stub(param1)
+	}
+	return f.ShouldRunCall.Returns.Bool, f.ShouldRunCall.Returns.Error
 }

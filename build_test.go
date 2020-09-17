@@ -39,6 +39,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		logs = bytes.NewBuffer(nil)
 
 		buildProcess = &fakes.BuildProcess{}
+		buildProcess.ShouldRunCall.Returns.Bool = true
 
 		build = gomodvendor.Build(
 			buildProcess,
@@ -78,13 +79,52 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}))
 
+		Expect(buildProcess.ShouldRunCall.Receives.WorkingDir).To(Equal(workingDir))
+
 		Expect(buildProcess.ExecuteCall.Receives.Path).To(Equal(filepath.Join(layersDir, "mod-cache")))
 		Expect(buildProcess.ExecuteCall.Receives.WorkingDir).To(Equal(workingDir))
 
 		Expect(logs.String()).To(ContainSubstring("Some Buildpack some-version"))
+		Expect(logs.String()).NotTo(ContainSubstring("Skipping build process: module graph is empty"))
+	})
+
+	context("when there are no modules in go.mod", func() {
+		it.Before(func() {
+			buildProcess.ShouldRunCall.Returns.Bool = false
+		})
+
+		it("does not include the module cache layer in the build result", func() {
+			result, err := build(packit.BuildContext{
+				Layers:     packit.Layers{Path: layersDir},
+				WorkingDir: workingDir,
+				BuildpackInfo: packit.BuildpackInfo{
+					Name:    "Some Buildpack",
+					Version: "some-version",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(result).To(Equal(packit.BuildResult{}))
+
+			Expect(logs.String()).To(ContainSubstring("Skipping build process: module graph is empty"))
+		})
 	})
 
 	context("failure cases", func() {
+		context("build process fails to check if it should run", func() {
+			it.Before(func() {
+				buildProcess.ShouldRunCall.Returns.Error = errors.New("build process failed to check")
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					Layers:     packit.Layers{Path: layersDir},
+					WorkingDir: workingDir,
+				})
+				Expect(err).To(MatchError(ContainSubstring("build process failed to check")))
+			})
+		})
+
 		context("modCacheLayer cannot be retrieved", func() {
 			it.Before(func() {
 				Expect(ioutil.WriteFile(filepath.Join(layersDir, "mod-cache.toml"), nil, 0000)).To(Succeed())
@@ -99,9 +139,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
-		context("build process fails", func() {
+		context("build process fails to execute", func() {
 			it.Before(func() {
-				buildProcess.ExecuteCall.Returns.Error = errors.New("build process failed")
+				buildProcess.ExecuteCall.Stub = nil
+				buildProcess.ExecuteCall.Returns.Error = errors.New("build process failed to execute")
 			})
 
 			it("returns an error", func() {
@@ -109,7 +150,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Layers:     packit.Layers{Path: layersDir},
 					WorkingDir: workingDir,
 				})
-				Expect(err).To(MatchError(ContainSubstring("build process failed")))
+				Expect(err).To(MatchError(ContainSubstring("build process failed to execute")))
 			})
 		})
 	})
