@@ -17,8 +17,14 @@ To package this buildpack for consumption:
 ```
 $ ./scripts/package.sh
 ```
-This builds the buildpack's Go source using GOOS=linux by default. You can supply another value as the first argument to package.sh.
+This builds the buildpack's Go source using GOOS=linux by default. You can
+supply another value as the first argument to package.sh.
 
 ## `buildpack.yml` Configuration
 
 The Go Mod Vendor buildpack does not support configurations via `buildpack.yml`.
+
+## Go Version
+
+This buildpack will request the latest minor version of the `major.minor`
+version it finds in the `go.mod` file from the `go-dist` buildpack.
