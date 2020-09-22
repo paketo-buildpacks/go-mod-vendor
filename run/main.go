@@ -11,8 +11,9 @@ import (
 
 func main() {
 	logEmitter := gomodvendor.NewLogEmitter(os.Stdout)
+	goModParser := gomodvendor.NewGoModParser()
 	packit.Run(
-		gomodvendor.Detect(),
+		gomodvendor.Detect(goModParser),
 		gomodvendor.Build(
 			gomodvendor.NewModVendor(pexec.NewExecutable("go"), logEmitter, chronos.DefaultClock),
 			logEmitter,

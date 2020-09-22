@@ -12,5 +12,6 @@ func TestUnitGoModVendor(t *testing.T) {
 	suite("Build", testBuild)
 	suite("Detect", testDetect)
 	suite("Mod Vendor", testModVendor)
+	suite("Go Mod Parser", testGoModParser)
 	suite.Run(t)
 }
