@@ -8,14 +8,26 @@ import (
 	"github.com/paketo-buildpacks/packit"
 )
 
-func Detect() packit.DetectFunc {
+//go:generate faux --interface VersionParser --output fakes/version_parser.go
+type VersionParser interface {
+	ParseVersion(path string) (version string, err error)
+}
+
+type BuildPlanMetadata struct {
+	VersionSource string `toml:"version-source"`
+	Version       string `toml:"version"`
+	Build         bool   `toml:"build"`
+}
+
+func Detect(goModParser VersionParser) packit.DetectFunc {
 	return func(context packit.DetectContext) (packit.DetectResult, error) {
-		_, err := os.Stat(filepath.Join(context.WorkingDir, "go.mod"))
+
+		version, err := goModParser.ParseVersion(filepath.Join(context.WorkingDir, GoModLocation))
 		if err != nil {
 			if os.IsNotExist(err) {
 				return packit.DetectResult{}, packit.Fail
 			}
-			return packit.DetectResult{}, fmt.Errorf("failed to stat go.mod: %w", err)
+			return packit.DetectResult{}, err
 		}
 
 		_, err = os.Stat(filepath.Join(context.WorkingDir, "vendor"))
@@ -31,9 +43,11 @@ func Detect() packit.DetectFunc {
 			Plan: packit.BuildPlan{
 				Requires: []packit.BuildPlanRequirement{
 					{
-						Name: "go",
-						Metadata: map[string]interface{}{
-							"build": true,
+						Name: GoLayerName,
+						Metadata: BuildPlanMetadata{
+							VersionSource: GoModLocation,
+							Build:         true,
+							Version:       version,
 						},
 					},
 				},

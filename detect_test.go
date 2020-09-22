@@ -1,12 +1,14 @@
 package gomodvendor_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
+	"github.com/paketo-buildpacks/go-mod-vendor/fakes"
 	"github.com/paketo-buildpacks/packit"
 	"github.com/sclevine/spec"
 
@@ -17,35 +19,42 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		workingDir string
-		detect     packit.DetectFunc
+		workingDir  string
+		goModParser *fakes.VersionParser
+		detect      packit.DetectFunc
 	)
 
 	it.Before(func() {
 		var err error
 		workingDir, err = ioutil.TempDir("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
+		goModParser = &fakes.VersionParser{}
 
-		Expect(ioutil.WriteFile(filepath.Join(workingDir, "go.mod"), nil, 0644)).To(Succeed())
-
-		detect = gomodvendor.Detect()
+		detect = gomodvendor.Detect(goModParser)
 	})
 
 	it.After(func() {
 		Expect(os.RemoveAll(workingDir)).To(Succeed())
 	})
 
+	it.Before(func() {
+		goModParser.ParseVersionCall.Returns.Version = "1.15"
+	})
+
 	it("detects", func() {
 		result, err := detect(packit.DetectContext{
 			WorkingDir: workingDir,
 		})
+
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.Plan).To(Equal(packit.BuildPlan{
 			Requires: []packit.BuildPlanRequirement{
 				{
 					Name: "go",
-					Metadata: map[string]interface{}{
-						"build": true,
+					Metadata: gomodvendor.BuildPlanMetadata{
+						VersionSource: "go.mod",
+						Version:       "1.15",
+						Build:         true,
 					},
 				},
 			},
@@ -54,7 +63,8 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	context("go.mod does not exist in the working directory", func() {
 		it.Before(func() {
-			Expect(os.RemoveAll(filepath.Join(workingDir, "go.mod"))).To(Succeed())
+			_, err := os.Stat("/no/such/go.mod")
+			goModParser.ParseVersionCall.Returns.Err = err
 		})
 
 		it("fails detection", func() {
@@ -79,20 +89,16 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("failure cases", func() {
-		context("the workspace directory cannot be accessed", func() {
+		context("the go.mod file cannot be read", func() {
 			it.Before(func() {
-				Expect(os.Chmod(workingDir, 0000)).To(Succeed())
-			})
-
-			it.After(func() {
-				Expect(os.Chmod(workingDir, os.ModePerm)).To(Succeed())
+				goModParser.ParseVersionCall.Returns.Err = errors.New("failed to read go.mod file")
 			})
 
 			it("returns an error", func() {
 				_, err := detect(packit.DetectContext{
 					WorkingDir: workingDir,
 				})
-				Expect(err).To(MatchError(ContainSubstring("failed to stat go.mod:")))
+				Expect(err).To(MatchError("failed to read go.mod file"))
 			})
 		})
 	})
