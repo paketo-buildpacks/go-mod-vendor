@@ -30,6 +30,34 @@ func NewModVendor(executable Executable, logs LogEmitter, clock chronos.Clock) M
 	}
 }
 
+func (m ModVendor) ShouldRun(workingDir string) (bool, error) {
+	buffer := bytes.NewBuffer(nil)
+	args := []string{"mod", "graph"}
+
+	m.logs.Process("Checking module graph")
+	m.logs.Subprocess("Running 'go %s'", strings.Join(args, " "))
+
+	duration, err := m.clock.Measure(func() error {
+		return m.executable.Execute(pexec.Execution{
+			Args:   args,
+			Dir:    workingDir,
+			Stdout: buffer,
+			Stderr: buffer,
+		})
+	})
+	if err != nil {
+		m.logs.Action("Failed after %s", duration.Round(time.Millisecond))
+		m.logs.Detail(buffer.String())
+
+		return false, err
+	}
+
+	m.logs.Action("Completed in %s", duration.Round(time.Millisecond))
+	m.logs.Break()
+
+	return buffer.Len() > 0, nil
+}
+
 func (m ModVendor) Execute(path, workingDir string) error {
 	buffer := bytes.NewBuffer(nil)
 	args := []string{"mod", "vendor"}

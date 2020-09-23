@@ -13,7 +13,7 @@ import (
 	. "github.com/paketo-buildpacks/occam/matchers"
 )
 
-func testDefault(t *testing.T, context spec.G, it spec.S) {
+func testEmptyCache(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
@@ -28,8 +28,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 
 	context("when building a simple go mod app", func() {
 		var (
-			image     occam.Image
-			container occam.Container
+			image occam.Image
 
 			name   string
 			source string
@@ -42,7 +41,6 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it.After(func() {
-			Expect(docker.Container.Remove.Execute(container.ID)).To(Succeed())
 			Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
 			Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
 			Expect(os.RemoveAll(source)).To(Succeed())
@@ -50,7 +48,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 
 		it("builds successfully", func() {
 			var err error
-			source, err = occam.Source(filepath.Join("testdata", "default"))
+			source, err = occam.Source(filepath.Join("testdata", "no_modules"))
 			Expect(err).NotTo(HaveOccurred())
 
 			var logs fmt.Stringer
@@ -61,7 +59,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 					settings.Buildpacks.GoModVendor.Online,
 				).
 				Execute(name, source)
-			Expect(err).ToNot(HaveOccurred(), logs.String)
+			Expect(err).NotTo(HaveOccurred(), logs.String)
 
 			Expect(logs).To(ContainLines(
 				MatchRegexp(fmt.Sprintf(`%s \d+\.\d+\.\d+`, settings.Buildpack.Name)),
@@ -69,23 +67,11 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				"    Running 'go mod graph'",
 				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
 				"",
-				"  Executing build process",
-				"    Running 'go mod vendor'",
-				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
+				"  Skipping build process: module graph is empty",
 				"",
 			))
 
-			container, err = docker.Container.Run.
-				WithCommand("ls -alR /workspace").
-				Execute(image.ID)
-			Expect(err).NotTo(HaveOccurred())
-
-			logs, err = docker.Container.Logs.Execute(container.ID)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logs).To(ContainSubstring("go.sum"))
-			Expect(logs).To(ContainSubstring("vendor/github.com/BurntSushi"))
-			Expect(logs).To(ContainSubstring("vendor/github.com/satori"))
+			Expect(logs).NotTo(ContainSubstring(fmt.Sprintf("%s:mod-cache", settings.Buildpack.ID)))
 		})
 	})
 }

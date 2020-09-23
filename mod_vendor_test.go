@@ -65,6 +65,76 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.RemoveAll(workingDir)).To(Succeed())
 	})
 
+	context("ShouldRun", func() {
+		context("when the module graph is empty", func() {
+			it("returns false", func() {
+				ok, err := modVendor.ShouldRun(workingDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ok).To(BeFalse())
+
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
+					Args:   []string{"mod", "graph"},
+					Dir:    workingDir,
+					Stdout: bytes.NewBuffer(nil),
+					Stderr: bytes.NewBuffer(nil),
+				}))
+
+				Expect(logs.String()).To(ContainSubstring("  Checking module graph"))
+				Expect(logs.String()).To(ContainSubstring("    Running 'go mod graph'"))
+				Expect(logs.String()).To(ContainSubstring("      Completed in 1s"))
+			})
+		})
+
+		context("when the module graph is not empty", func() {
+			it.Before(func() {
+				executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+					fmt.Fprintln(execution.Stdout, "myapp somepackage\nmyapp otherpackage")
+
+					return nil
+				}
+			})
+
+			it("returns true", func() {
+				ok, err := modVendor.ShouldRun(workingDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ok).To(BeTrue())
+
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
+					Args:   []string{"mod", "graph"},
+					Dir:    workingDir,
+					Stdout: bytes.NewBuffer([]byte("myapp somepackage\nmyapp otherpackage\n")),
+					Stderr: bytes.NewBuffer([]byte("myapp somepackage\nmyapp otherpackage\n")),
+				}))
+
+				Expect(logs.String()).To(ContainSubstring("  Checking module graph"))
+				Expect(logs.String()).To(ContainSubstring("    Running 'go mod graph'"))
+				Expect(logs.String()).To(ContainSubstring("      Completed in 1s"))
+			})
+		})
+
+		context("failure cases", func() {
+			context("the executable fails", func() {
+				it.Before(func() {
+					executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+						fmt.Fprintln(execution.Stdout, "build error stdout")
+						fmt.Fprintln(execution.Stderr, "build error stderr")
+
+						return errors.New("executable failed")
+					}
+				})
+
+				it("returns an error", func() {
+					_, err := modVendor.ShouldRun(workingDir)
+					Expect(err).To(MatchError(ContainSubstring("executable failed")))
+
+					Expect(logs.String()).To(ContainSubstring("      Failed after 1s"))
+					Expect(logs.String()).To(ContainSubstring("        build error stdout"))
+					Expect(logs.String()).To(ContainSubstring("        build error stderr"))
+				})
+			})
+		})
+	})
+
 	context("Execute", func() {
 		it("runs go mod vendor", func() {
 			err := modVendor.Execute(modCachePath, workingDir)
@@ -92,6 +162,7 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 				it("returns an error", func() {
 					err := modVendor.Execute(modCachePath, workingDir)
 					Expect(err).To(MatchError(ContainSubstring("executable failed")))
+
 					Expect(logs.String()).To(ContainSubstring("      Failed after 1s"))
 					Expect(logs.String()).To(ContainSubstring("        build error stdout"))
 					Expect(logs.String()).To(ContainSubstring("        build error stderr"))
