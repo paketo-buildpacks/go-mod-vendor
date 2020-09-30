@@ -2,6 +2,7 @@ package gomodvendor_test
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -64,14 +65,14 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	context("go.mod does not exist in the working directory", func() {
 		it.Before(func() {
 			_, err := os.Stat("/no/such/go.mod")
-			goModParser.ParseVersionCall.Returns.Err = err
+			goModParser.ParseVersionCall.Returns.Err = fmt.Errorf("failed to parse go.mod: %w", err)
 		})
 
 		it("fails detection", func() {
 			_, err := detect(packit.DetectContext{
 				WorkingDir: workingDir,
 			})
-			Expect(err).To(MatchError(packit.Fail))
+			Expect(err).To(MatchError(packit.Fail.WithMessage("go.mod file is not present")))
 		})
 	})
 
