@@ -1,6 +1,7 @@
 package gomodvendor
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,11 +22,10 @@ type BuildPlanMetadata struct {
 
 func Detect(goModParser VersionParser) packit.DetectFunc {
 	return func(context packit.DetectContext) (packit.DetectResult, error) {
-
 		version, err := goModParser.ParseVersion(filepath.Join(context.WorkingDir, GoModLocation))
 		if err != nil {
-			if os.IsNotExist(err) {
-				return packit.DetectResult{}, packit.Fail
+			if errors.Is(err, os.ErrNotExist) {
+				return packit.DetectResult{}, packit.Fail.WithMessage("go.mod file is not present")
 			}
 			return packit.DetectResult{}, err
 		}
