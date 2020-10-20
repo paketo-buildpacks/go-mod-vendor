@@ -7,6 +7,6 @@ require (
 	github.com/cloudfoundry/packit v0.0.4
 	github.com/onsi/gomega v1.10.3
 	github.com/paketo-buildpacks/occam v0.0.19
-	github.com/paketo-buildpacks/packit v0.2.8
+	github.com/paketo-buildpacks/packit v0.3.0
 	github.com/sclevine/spec v1.4.0
 )
