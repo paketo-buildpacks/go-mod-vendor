@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/cloudfoundry/packit/pexec"
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
+	"github.com/paketo-buildpacks/packit/pexec"
 )
 
 func main() {

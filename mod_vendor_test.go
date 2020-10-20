@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry/packit/pexec"
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
 	"github.com/paketo-buildpacks/go-mod-vendor/fakes"
 	"github.com/paketo-buildpacks/packit/chronos"
+	"github.com/paketo-buildpacks/packit/pexec"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
