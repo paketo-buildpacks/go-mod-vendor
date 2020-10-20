@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry/packit/pexec"
 	"github.com/paketo-buildpacks/packit/chronos"
+	"github.com/paketo-buildpacks/packit/pexec"
 )
 
 //go:generate faux --interface Executable --output fakes/executable.go
