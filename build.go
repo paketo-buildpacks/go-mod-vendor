@@ -26,10 +26,12 @@ func Build(buildProcess BuildProcess, logs LogEmitter) packit.BuildFunc {
 			return packit.BuildResult{}, nil
 		}
 
-		modCacheLayer, err := context.Layers.Get("mod-cache", packit.CacheLayer)
+		modCacheLayer, err := context.Layers.Get("mod-cache")
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
+
+		modCacheLayer.Cache = true
 
 		err = buildProcess.Execute(modCacheLayer.Path, context.WorkingDir)
 		if err != nil {
