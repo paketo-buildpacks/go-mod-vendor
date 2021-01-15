@@ -6,6 +6,7 @@ import (
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
+	"github.com/paketo-buildpacks/packit/fs"
 	"github.com/paketo-buildpacks/packit/pexec"
 )
 
@@ -15,7 +16,13 @@ func main() {
 	packit.Run(
 		gomodvendor.Detect(goModParser),
 		gomodvendor.Build(
-			gomodvendor.NewModVendor(pexec.NewExecutable("go"), logEmitter, chronos.DefaultClock),
+			gomodvendor.NewModVendor(pexec.NewExecutable("go"),
+				logEmitter,
+				chronos.DefaultClock),
+			gomodvendor.NewBuildPlanRefinery(pexec.NewExecutable("go"),
+				logEmitter,
+				chronos.DefaultClock,
+				fs.NewChecksumCalculator()),
 			logEmitter,
 		),
 	)

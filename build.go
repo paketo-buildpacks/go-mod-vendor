@@ -10,7 +10,17 @@ type BuildProcess interface {
 	Execute(path, workingDir string) error
 }
 
-func Build(buildProcess BuildProcess, logs LogEmitter) packit.BuildFunc {
+//go:generate faux --interface ChecksumCalculator --output fakes/checksum_calculator.go
+type ChecksumCalculator interface {
+	Sum(...string) (sha string, err error)
+}
+
+//go:generate faux --interface PlanRefinery --output fakes/plan_refinery.go
+type PlanRefinery interface {
+	BillOfMaterials(workingDir string) (packit.BuildpackPlanEntry, error)
+}
+
+func Build(buildProcess BuildProcess, planRefinery PlanRefinery, logs LogEmitter) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logs.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
@@ -38,8 +48,15 @@ func Build(buildProcess BuildProcess, logs LogEmitter) packit.BuildFunc {
 			return packit.BuildResult{}, err
 		}
 
+		bom, err := planRefinery.BillOfMaterials(context.WorkingDir)
+		if err != nil {
+			panic(err)
+		}
+
 		return packit.BuildResult{
-			Plan:   context.Plan,
+			Plan: packit.BuildpackPlan{
+				Entries: []packit.BuildpackPlanEntry{bom},
+			},
 			Layers: []packit.Layer{modCacheLayer},
 		}, nil
 	}

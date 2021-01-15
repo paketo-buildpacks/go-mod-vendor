@@ -24,6 +24,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		workingDir   string
 		logs         *bytes.Buffer
 		buildProcess *fakes.BuildProcess
+		planRefinery *fakes.PlanRefinery
 
 		build packit.BuildFunc
 	)
@@ -41,8 +42,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buildProcess = &fakes.BuildProcess{}
 		buildProcess.ShouldRunCall.Returns.Bool = true
 
+		planRefinery = &fakes.PlanRefinery{}
+		planRefinery.BillOfMaterialsCall.Returns.BuildpackPlanEntry = packit.BuildpackPlanEntry{
+			Name: "some-name",
+		}
+
 		build = gomodvendor.Build(
 			buildProcess,
+			planRefinery,
 			gomodvendor.NewLogEmitter(logs),
 		)
 	})
@@ -64,6 +71,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result).To(Equal(packit.BuildResult{
+			Plan: packit.BuildpackPlan{
+				Entries: []packit.BuildpackPlanEntry{
+					packit.BuildpackPlanEntry{
+						Name: "some-name",
+					},
+				},
+			},
 			Layers: []packit.Layer{
 				{
 					Name:      "mod-cache",
