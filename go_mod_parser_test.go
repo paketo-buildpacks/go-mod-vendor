@@ -48,7 +48,7 @@ require (
 		it("parses the go version from a go.mod file", func() {
 			version, err := parser.ParseVersion(path)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(version).To(Equal("1.15.*"))
+			Expect(version).To(Equal(">= 1.15"))
 		})
 
 		context("failure cases", func() {

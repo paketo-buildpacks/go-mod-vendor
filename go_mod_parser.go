@@ -28,7 +28,7 @@ func (p GoModParser) ParseVersion(path string) (string, error) {
 		matches := re.FindStringSubmatch(scanner.Text())
 
 		if len(matches) == 2 {
-			return fmt.Sprint(matches[1], ".*"), nil
+			return fmt.Sprintf(">= %s", matches[1]), nil
 		}
 	}
 
