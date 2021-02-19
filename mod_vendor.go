@@ -9,6 +9,7 @@ import (
 
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/pexec"
+	"github.com/paketo-buildpacks/packit/scribe"
 )
 
 //go:generate faux --interface Executable --output fakes/executable.go
@@ -18,11 +19,11 @@ type Executable interface {
 
 type ModVendor struct {
 	executable Executable
-	logs       LogEmitter
+	logs       scribe.Emitter
 	clock      chronos.Clock
 }
 
-func NewModVendor(executable Executable, logs LogEmitter, clock chronos.Clock) ModVendor {
+func NewModVendor(executable Executable, logs scribe.Emitter, clock chronos.Clock) ModVendor {
 	return ModVendor{
 		executable: executable,
 		logs:       logs,

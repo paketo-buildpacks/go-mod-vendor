@@ -13,6 +13,7 @@ import (
 	"github.com/paketo-buildpacks/go-mod-vendor/fakes"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/pexec"
+	"github.com/paketo-buildpacks/packit/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -57,7 +58,7 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 			return t
 		})
 
-		modVendor = gomodvendor.NewModVendor(executable, gomodvendor.NewLogEmitter(logs), clock)
+		modVendor = gomodvendor.NewModVendor(executable, scribe.NewEmitter(logs), clock)
 	})
 
 	it.After(func() {
