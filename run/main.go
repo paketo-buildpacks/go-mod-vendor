@@ -7,10 +7,11 @@ import (
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/pexec"
+	"github.com/paketo-buildpacks/packit/scribe"
 )
 
 func main() {
-	logEmitter := gomodvendor.NewLogEmitter(os.Stdout)
+	logEmitter := scribe.NewEmitter(os.Stdout)
 	goModParser := gomodvendor.NewGoModParser()
 	packit.Run(
 		gomodvendor.Detect(goModParser),
