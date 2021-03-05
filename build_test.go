@@ -40,7 +40,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		logs = bytes.NewBuffer(nil)
 
 		buildProcess = &fakes.BuildProcess{}
-		buildProcess.ShouldRunCall.Returns.Bool = true
+		buildProcess.ShouldRunCall.Returns.Ok = true
 
 		build = gomodvendor.Build(
 			buildProcess,
@@ -91,7 +91,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("when there are no modules in go.mod", func() {
 		it.Before(func() {
-			buildProcess.ShouldRunCall.Returns.Bool = false
+			buildProcess.ShouldRunCall.Returns.Ok = false
+			buildProcess.ShouldRunCall.Returns.Reason = "module graph is empty"
 		})
 
 		it("does not include the module cache layer in the build result", func() {
@@ -114,7 +115,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	context("failure cases", func() {
 		context("build process fails to check if it should run", func() {
 			it.Before(func() {
-				buildProcess.ShouldRunCall.Returns.Error = errors.New("build process failed to check")
+				buildProcess.ShouldRunCall.Returns.Err = errors.New("build process failed to check")
 			})
 
 			it("returns an error", func() {

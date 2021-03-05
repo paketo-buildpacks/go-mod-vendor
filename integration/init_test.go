@@ -18,10 +18,12 @@ import (
 var settings struct {
 	Buildpacks struct {
 		GoDist struct {
-			Online string
+			Online  string
+			Offline string
 		}
 		GoModVendor struct {
-			Online string
+			Online  string
+			Offline string
 		}
 	}
 	Buildpack struct {
@@ -59,14 +61,26 @@ func TestIntegration(t *testing.T) {
 		Execute(root)
 	Expect(err).ToNot(HaveOccurred())
 
+	settings.Buildpacks.GoModVendor.Offline, err = buildpackStore.Get.
+		WithOfflineDependencies().
+		WithVersion("1.2.3").
+		Execute(root)
+	Expect(err).NotTo(HaveOccurred())
+
 	settings.Buildpacks.GoDist.Online, err = buildpackStore.Get.
 		Execute(settings.Config.GoDist)
 	Expect(err).ToNot(HaveOccurred())
+
+	settings.Buildpacks.GoDist.Offline, err = buildpackStore.Get.
+		WithOfflineDependencies().
+		Execute(settings.Config.GoDist)
+	Expect(err).NotTo(HaveOccurred())
 
 	SetDefaultEventuallyTimeout(10 * time.Second)
 
 	suite := spec.New("Integration", spec.Report(report.Terminal{}), spec.Parallel())
 	suite("Default", testDefault)
 	suite("EmptyCache", testEmptyCache)
+	suite("Vendored", testVendored)
 	suite.Run(t)
 }
