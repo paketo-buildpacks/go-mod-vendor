@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -67,26 +68,7 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("ShouldRun", func() {
-		context("when the module graph is empty", func() {
-			it("returns false", func() {
-				ok, err := modVendor.ShouldRun(workingDir)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ok).To(BeFalse())
-
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args:   []string{"mod", "graph"},
-					Dir:    workingDir,
-					Stdout: bytes.NewBuffer(nil),
-					Stderr: bytes.NewBuffer(nil),
-				}))
-
-				Expect(logs.String()).To(ContainSubstring("  Checking module graph"))
-				Expect(logs.String()).To(ContainSubstring("    Running 'go mod graph'"))
-				Expect(logs.String()).To(ContainSubstring("      Completed in 1s"))
-			})
-		})
-
-		context("when the module graph is not empty", func() {
+		context("when the module graph is not empty and there is no vendor directory present", func() {
 			it.Before(func() {
 				executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
 					fmt.Fprintln(execution.Stdout, "myapp somepackage\nmyapp otherpackage")
@@ -96,7 +78,7 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns true", func() {
-				ok, err := modVendor.ShouldRun(workingDir)
+				ok, _, err := modVendor.ShouldRun(workingDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(ok).To(BeTrue())
 
@@ -113,6 +95,39 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
+		context("when the module graph is empty", func() {
+			it("returns false", func() {
+				ok, reason, err := modVendor.ShouldRun(workingDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ok).To(BeFalse())
+				Expect(reason).To(Equal("module graph is empty"))
+
+				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
+					Args:   []string{"mod", "graph"},
+					Dir:    workingDir,
+					Stdout: bytes.NewBuffer(nil),
+					Stderr: bytes.NewBuffer(nil),
+				}))
+
+				Expect(logs.String()).To(ContainSubstring("  Checking module graph"))
+				Expect(logs.String()).To(ContainSubstring("    Running 'go mod graph'"))
+				Expect(logs.String()).To(ContainSubstring("      Completed in 1s"))
+			})
+		})
+
+		context("when there is a vendor directory present", func() {
+			it.Before(func() {
+				Expect(os.Mkdir(filepath.Join(workingDir, "vendor"), os.ModePerm)).To(Succeed())
+			})
+
+			it("returns false", func() {
+				ok, reason, err := modVendor.ShouldRun(workingDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ok).To(BeFalse())
+				Expect(reason).To(Equal("modules are already vendored"))
+			})
+		})
+
 		context("failure cases", func() {
 			context("the executable fails", func() {
 				it.Before(func() {
@@ -125,7 +140,7 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("returns an error", func() {
-					_, err := modVendor.ShouldRun(workingDir)
+					_, _, err := modVendor.ShouldRun(workingDir)
 					Expect(err).To(MatchError(ContainSubstring("executable failed")))
 
 					Expect(logs.String()).To(ContainSubstring("      Failed after 1s"))

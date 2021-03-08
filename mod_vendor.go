@@ -2,8 +2,10 @@ package gomodvendor
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -31,7 +33,40 @@ func NewModVendor(executable Executable, logs scribe.Emitter, clock chronos.Cloc
 	}
 }
 
-func (m ModVendor) ShouldRun(workingDir string) (bool, error) {
+func (m ModVendor) ShouldRun(workingDir string) (bool, string, error) {
+	ok, err := m.hasVendorDirectory(workingDir)
+	if err != nil {
+		return false, "", err
+	}
+	if ok {
+		return false, "modules are already vendored", nil
+	}
+
+	ok, err = m.hasModuleGraph(workingDir)
+	if err != nil {
+		return false, "", err
+	}
+	if !ok {
+		return false, "module graph is empty", nil
+	}
+
+	return true, "", nil
+}
+
+func (m ModVendor) hasVendorDirectory(workingDir string) (bool, error) {
+	_, err := os.Stat(filepath.Join(workingDir, "vendor"))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (m ModVendor) hasModuleGraph(workingDir string) (bool, error) {
 	buffer := bytes.NewBuffer(nil)
 	args := []string{"mod", "graph"}
 

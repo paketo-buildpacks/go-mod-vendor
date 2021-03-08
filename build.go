@@ -7,7 +7,7 @@ import (
 
 //go:generate faux --interface BuildProcess --output fakes/build_process.go
 type BuildProcess interface {
-	ShouldRun(workingDir string) (bool, error)
+	ShouldRun(workingDir string) (ok bool, reason string, err error)
 	Execute(path, workingDir string) error
 }
 
@@ -15,13 +15,13 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logs.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
-		ok, err := buildProcess.ShouldRun(context.WorkingDir)
+		ok, reason, err := buildProcess.ShouldRun(context.WorkingDir)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
 
 		if !ok {
-			logs.Process("Skipping build process: module graph is empty")
+			logs.Process("Skipping build process: %s", reason)
 			logs.Break()
 
 			return packit.BuildResult{}, nil

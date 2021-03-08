@@ -46,7 +46,6 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		result, err := detect(packit.DetectContext{
 			WorkingDir: workingDir,
 		})
-
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result.Plan).To(Equal(packit.BuildPlan{
 			Requires: []packit.BuildPlanRequirement{
@@ -81,11 +80,23 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.MkdirAll(filepath.Join(workingDir, "vendor"), os.ModePerm)).To(Succeed())
 		})
 
-		it("fails detection", func() {
-			_, err := detect(packit.DetectContext{
+		it("detects", func() {
+			result, err := detect(packit.DetectContext{
 				WorkingDir: workingDir,
 			})
-			Expect(err).To(MatchError(packit.Fail))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Plan).To(Equal(packit.BuildPlan{
+				Requires: []packit.BuildPlanRequirement{
+					{
+						Name: "go",
+						Metadata: gomodvendor.BuildPlanMetadata{
+							VersionSource: "go.mod",
+							Version:       ">= 1.15",
+							Build:         true,
+						},
+					},
+				},
+			}))
 		})
 	})
 

@@ -22,10 +22,11 @@ type BuildProcess struct {
 			WorkingDir string
 		}
 		Returns struct {
-			Bool  bool
-			Error error
+			Ok     bool
+			Reason string
+			Err    error
 		}
-		Stub func(string) (bool, error)
+		Stub func(string) (bool, string, error)
 	}
 }
 
@@ -40,7 +41,7 @@ func (f *BuildProcess) Execute(param1 string, param2 string) error {
 	}
 	return f.ExecuteCall.Returns.Error
 }
-func (f *BuildProcess) ShouldRun(param1 string) (bool, error) {
+func (f *BuildProcess) ShouldRun(param1 string) (bool, string, error) {
 	f.ShouldRunCall.Lock()
 	defer f.ShouldRunCall.Unlock()
 	f.ShouldRunCall.CallCount++
@@ -48,5 +49,5 @@ func (f *BuildProcess) ShouldRun(param1 string) (bool, error) {
 	if f.ShouldRunCall.Stub != nil {
 		return f.ShouldRunCall.Stub(param1)
 	}
-	return f.ShouldRunCall.Returns.Bool, f.ShouldRunCall.Returns.Error
+	return f.ShouldRunCall.Returns.Ok, f.ShouldRunCall.Returns.Reason, f.ShouldRunCall.Returns.Err
 }

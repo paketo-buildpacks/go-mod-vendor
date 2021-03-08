@@ -2,7 +2,6 @@ package gomodvendor
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -28,15 +27,6 @@ func Detect(goModParser VersionParser) packit.DetectFunc {
 				return packit.DetectResult{}, packit.Fail.WithMessage("go.mod file is not present")
 			}
 			return packit.DetectResult{}, err
-		}
-
-		_, err = os.Stat(filepath.Join(context.WorkingDir, "vendor"))
-		if err == nil {
-			return packit.DetectResult{}, packit.Fail
-		} else {
-			if !os.IsNotExist(err) {
-				return packit.DetectResult{}, fmt.Errorf("failed to stat vendor directory: %w", err)
-			}
 		}
 
 		return packit.DetectResult{
