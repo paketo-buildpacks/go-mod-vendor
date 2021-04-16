@@ -15,7 +15,8 @@ import (
 
 func testDefault(t *testing.T, context spec.G, it spec.S) {
 	var (
-		Expect = NewWithT(t).Expect
+		Expect     = NewWithT(t).Expect
+		Eventually = NewWithT(t).Eventually
 
 		pack   occam.Pack
 		docker occam.Docker
@@ -80,12 +81,14 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
-			logs, err = docker.Container.Logs.Execute(container.ID)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(logs).To(ContainSubstring("go.sum"))
-			Expect(logs).To(ContainSubstring("vendor/github.com/BurntSushi"))
-			Expect(logs).To(ContainSubstring("vendor/github.com/satori"))
+			Eventually(func() fmt.Stringer {
+				logs, _ = docker.Container.Logs.Execute(container.ID)
+				return logs
+			}).Should(SatisfyAll(
+				ContainSubstring("go.sum"),
+				ContainSubstring("vendor/github.com/BurntSushi"),
+				ContainSubstring("vendor/github.com/satori"),
+			))
 		})
 	})
 }
