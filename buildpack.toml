@@ -6,9 +6,9 @@ api = "0.4"
   name = "Paketo Go Mod Vendor Buildpack"
   version = "{{ .Version }}"
 
-[[buildpack.licenses]]
-type = "Apache-2.0"
-uri  = "https://github.com/paketo-buildpacks/go-mod-vendor/blob/main/LICENSE"
+  [[buildpack.licenses]]
+    type = "Apache-2.0"
+    uri = "https://github.com/paketo-buildpacks/go-mod-vendor/blob/main/LICENSE"
 
 [metadata]
   include-files = ["bin/build", "bin/detect", "bin/run", "buildpack.toml"]
