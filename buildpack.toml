@@ -4,7 +4,6 @@ api = "0.4"
   homepage = "https://github.com/paketo-buildpacks/go-mod-vendor"
   id = "paketo-buildpacks/go-mod-vendor"
   name = "Paketo Go Mod Vendor Buildpack"
-  version = "{{ .Version }}"
 
   [[buildpack.licenses]]
     type = "Apache-2.0"
