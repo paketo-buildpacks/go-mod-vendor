@@ -3,7 +3,6 @@ package gomodvendor_test
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,10 +30,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		layersDir, err = ioutil.TempDir("", "layers-dir")
+		layersDir, err = os.MkdirTemp("", "layers-dir")
 		Expect(err).NotTo(HaveOccurred())
 
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
 		logs = bytes.NewBuffer(nil)
@@ -130,7 +129,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		context("modCacheLayer cannot be retrieved", func() {
 			it.Before(func() {
-				Expect(ioutil.WriteFile(filepath.Join(layersDir, "mod-cache.toml"), nil, 0000)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(layersDir, "mod-cache.toml"), nil, 0000)).To(Succeed())
 			})
 
 			it("returns an error", func() {

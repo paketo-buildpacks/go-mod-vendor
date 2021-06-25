@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -35,10 +34,10 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		modCachePath, err = ioutil.TempDir("", "mod-cache")
+		modCachePath, err = os.MkdirTemp("", "mod-cache")
 		Expect(err).NotTo(HaveOccurred())
 
-		workingDir, err = ioutil.TempDir("", "working-directory")
+		workingDir, err = os.MkdirTemp("", "working-directory")
 		Expect(err).NotTo(HaveOccurred())
 
 		environment = os.Environ()

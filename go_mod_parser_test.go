@@ -1,7 +1,6 @@
 package gomodvendor_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -20,7 +19,7 @@ func testGoModParser(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
-		file, err := ioutil.TempFile("", "go.mod")
+		file, err := os.CreateTemp("", "go.mod")
 		Expect(err).NotTo(HaveOccurred())
 		defer file.Close()
 
