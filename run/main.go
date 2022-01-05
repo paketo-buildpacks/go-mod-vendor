@@ -4,20 +4,31 @@ import (
 	"os"
 
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
-	"github.com/paketo-buildpacks/packit"
-	"github.com/paketo-buildpacks/packit/chronos"
-	"github.com/paketo-buildpacks/packit/pexec"
-	"github.com/paketo-buildpacks/packit/scribe"
+	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/pexec"
+	"github.com/paketo-buildpacks/packit/v2/sbom"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
+
+type SBOMGenerator struct{}
+
+func (s SBOMGenerator) Generate(path string) (sbom.SBOM, error) {
+	return sbom.Generate(path)
+}
 
 func main() {
 	logEmitter := scribe.NewEmitter(os.Stdout)
 	goModParser := gomodvendor.NewGoModParser()
+	sbomGenerator := SBOMGenerator{}
+
 	packit.Run(
 		gomodvendor.Detect(goModParser),
 		gomodvendor.Build(
 			gomodvendor.NewModVendor(pexec.NewExecutable("go"), logEmitter, chronos.DefaultClock),
 			logEmitter,
+			chronos.DefaultClock,
+			sbomGenerator,
 		),
 	)
 }

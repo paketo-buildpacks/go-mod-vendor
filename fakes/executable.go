@@ -3,12 +3,12 @@ package fakes
 import (
 	"sync"
 
-	"github.com/paketo-buildpacks/packit/pexec"
+	"github.com/paketo-buildpacks/packit/v2/pexec"
 )
 
 type Executable struct {
 	ExecuteCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			Execution pexec.Execution
@@ -21,8 +21,8 @@ type Executable struct {
 }
 
 func (f *Executable) Execute(param1 pexec.Execution) error {
-	f.ExecuteCall.Lock()
-	defer f.ExecuteCall.Unlock()
+	f.ExecuteCall.mutex.Lock()
+	defer f.ExecuteCall.mutex.Unlock()
 	f.ExecuteCall.CallCount++
 	f.ExecuteCall.Receives.Execution = param1
 	if f.ExecuteCall.Stub != nil {

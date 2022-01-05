@@ -4,7 +4,7 @@ import "sync"
 
 type BuildProcess struct {
 	ExecuteCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			Path       string
@@ -16,7 +16,7 @@ type BuildProcess struct {
 		Stub func(string, string) error
 	}
 	ShouldRunCall struct {
-		sync.Mutex
+		mutex     sync.Mutex
 		CallCount int
 		Receives  struct {
 			WorkingDir string
@@ -31,8 +31,8 @@ type BuildProcess struct {
 }
 
 func (f *BuildProcess) Execute(param1 string, param2 string) error {
-	f.ExecuteCall.Lock()
-	defer f.ExecuteCall.Unlock()
+	f.ExecuteCall.mutex.Lock()
+	defer f.ExecuteCall.mutex.Unlock()
 	f.ExecuteCall.CallCount++
 	f.ExecuteCall.Receives.Path = param1
 	f.ExecuteCall.Receives.WorkingDir = param2
@@ -42,8 +42,8 @@ func (f *BuildProcess) Execute(param1 string, param2 string) error {
 	return f.ExecuteCall.Returns.Error
 }
 func (f *BuildProcess) ShouldRun(param1 string) (bool, string, error) {
-	f.ShouldRunCall.Lock()
-	defer f.ShouldRunCall.Unlock()
+	f.ShouldRunCall.mutex.Lock()
+	defer f.ShouldRunCall.mutex.Unlock()
 	f.ShouldRunCall.CallCount++
 	f.ShouldRunCall.Receives.WorkingDir = param1
 	if f.ShouldRunCall.Stub != nil {
