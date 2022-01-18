@@ -47,7 +47,7 @@ func TestIntegration(t *testing.T) {
 	file, err = os.Open("../buildpack.toml")
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = toml.DecodeReader(file, &settings)
+	_, err = toml.NewDecoder(file).Decode(&settings)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(file.Close()).To(Succeed())
 
