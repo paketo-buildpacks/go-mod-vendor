@@ -11,9 +11,9 @@ import (
 
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
 	"github.com/paketo-buildpacks/go-mod-vendor/fakes"
-	"github.com/paketo-buildpacks/packit/chronos"
-	"github.com/paketo-buildpacks/packit/pexec"
-	"github.com/paketo-buildpacks/packit/scribe"
+	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/pexec"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -23,20 +23,16 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		modCachePath string
-		workingDir   string
-		environment  []string
-		executable   *fakes.Executable
-		logs         *bytes.Buffer
+		workingDir  string
+		environment []string
+		executable  *fakes.Executable
+		logs        *bytes.Buffer
 
 		modVendor gomodvendor.ModVendor
 	)
 
 	it.Before(func() {
 		var err error
-		modCachePath, err = os.MkdirTemp("", "mod-cache")
-		Expect(err).NotTo(HaveOccurred())
-
 		workingDir, err = os.MkdirTemp("", "working-directory")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -62,7 +58,6 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		Expect(os.RemoveAll(modCachePath)).To(Succeed())
 		Expect(os.RemoveAll(workingDir)).To(Succeed())
 	})
 
@@ -128,6 +123,21 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		context("failure cases", func() {
+			context("the vendor dir stat fails", func() {
+				it.Before(func() {
+					Expect(os.Chmod(workingDir, 0000)).To(Succeed())
+				})
+
+				it.After(func() {
+					Expect(os.Chmod(workingDir, os.ModePerm)).To(Succeed())
+				})
+
+				it("returns an error", func() {
+					_, _, err := modVendor.ShouldRun(workingDir)
+					Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				})
+			})
+
 			context("the executable fails", func() {
 				it.Before(func() {
 					executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
@@ -152,10 +162,10 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 
 	context("Execute", func() {
 		it("runs go mod vendor", func() {
-			err := modVendor.Execute(modCachePath, workingDir)
+			err := modVendor.Execute("mod-cache-path", workingDir)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"mod", "vendor"}))
-			Expect(executable.ExecuteCall.Receives.Execution.Env).To(Equal(append(environment, fmt.Sprintf("GOPATH=%s", modCachePath))))
+			Expect(executable.ExecuteCall.Receives.Execution.Env).To(Equal(append(environment, fmt.Sprintf("GOPATH=%s", "mod-cache-path"))))
 			Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal(workingDir))
 
 			Expect(logs.String()).To(ContainSubstring("  Executing build process"))
@@ -175,7 +185,7 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("returns an error", func() {
-					err := modVendor.Execute(modCachePath, workingDir)
+					err := modVendor.Execute("mod-cache-path", workingDir)
 					Expect(err).To(MatchError(ContainSubstring("executable failed")))
 
 					Expect(logs.String()).To(ContainSubstring("      Failed after 1s"))
