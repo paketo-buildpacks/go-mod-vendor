@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/paketo-buildpacks/packit/chronos"
-	"github.com/paketo-buildpacks/packit/pexec"
-	"github.com/paketo-buildpacks/packit/scribe"
+	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/fs"
+	"github.com/paketo-buildpacks/packit/v2/pexec"
+	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
 
 //go:generate faux --interface Executable --output fakes/executable.go
@@ -34,7 +35,7 @@ func NewModVendor(executable Executable, logs scribe.Emitter, clock chronos.Cloc
 }
 
 func (m ModVendor) ShouldRun(workingDir string) (bool, string, error) {
-	ok, err := m.hasVendorDirectory(workingDir)
+	ok, err := fs.Exists(filepath.Join(workingDir, "vendor"))
 	if err != nil {
 		return false, "", err
 	}
