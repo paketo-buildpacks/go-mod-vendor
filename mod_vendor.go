@@ -2,7 +2,6 @@ package gomodvendor
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -52,19 +51,6 @@ func (m ModVendor) ShouldRun(workingDir string) (bool, string, error) {
 	}
 
 	return true, "", nil
-}
-
-func (m ModVendor) hasVendorDirectory(workingDir string) (bool, error) {
-	_, err := os.Stat(filepath.Join(workingDir, "vendor"))
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return false, nil
-		}
-
-		return false, err
-	}
-
-	return true, nil
 }
 
 func (m ModVendor) hasModuleGraph(workingDir string) (bool, error) {
