@@ -18,7 +18,7 @@ func (s SBOMGenerator) Generate(path string) (sbom.SBOM, error) {
 }
 
 func main() {
-	logEmitter := scribe.NewEmitter(os.Stdout)
+	logEmitter := scribe.NewEmitter(os.Stdout).WithLevel(os.Getenv("BP_LOG_LEVEL"))
 	goModParser := gomodvendor.NewGoModParser()
 	sbomGenerator := SBOMGenerator{}
 

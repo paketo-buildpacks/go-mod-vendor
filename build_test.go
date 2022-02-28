@@ -3,12 +3,13 @@ package gomodvendor_test
 import (
 	"bytes"
 	"errors"
-	"github.com/paketo-buildpacks/packit/v2/chronos"
-	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/sbom"
 
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
 	"github.com/paketo-buildpacks/go-mod-vendor/fakes"
@@ -86,10 +87,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{}))
 		Expect(result.Layers[0].ProcessLaunchEnv).To(Equal(map[string]packit.Environment{}))
 		Expect(result.Layers[0].Build).To(BeFalse())
-		Expect(result.Layers[0].Launch).To(BeTrue())
+		Expect(result.Layers[0].Launch).To(BeFalse())
 		Expect(result.Layers[0].Cache).To(BeTrue())
 
-		Expect(result.Layers[0].SBOM.Formats()).To(Equal([]packit.SBOMFormat{
+		Expect(result.Build.SBOM.Formats()).To(Equal([]packit.SBOMFormat{
 			{
 				Extension: "cdx.json",
 				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.CycloneDXFormat),

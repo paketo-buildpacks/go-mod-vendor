@@ -41,7 +41,6 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter, clock chronos.Clock, 
 			return packit.BuildResult{}, err
 		}
 
-		modCacheLayer.Launch = true
 		modCacheLayer.Cache = true
 
 		err = buildProcess.Execute(modCacheLayer.Path, context.WorkingDir)
@@ -49,7 +48,7 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter, clock chronos.Clock, 
 			return packit.BuildResult{}, err
 		}
 
-		logs.Process("Generating SBOM")
+		logs.GeneratingSBOM(context.WorkingDir)
 
 		var sbomContent sbom.SBOM
 		duration, err := clock.Measure(func() error {
@@ -60,8 +59,12 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter, clock chronos.Clock, 
 			return packit.BuildResult{}, err
 		}
 		logs.Action("Completed in %s", duration.Round(time.Millisecond))
+		logs.Break()
 
-		modCacheLayer.SBOM, err = sbomContent.InFormats(context.BuildpackInfo.SBOMFormats...)
+		logs.FormattingSBOM(context.BuildpackInfo.SBOMFormats...)
+
+		var buildMetadata packit.BuildMetadata
+		buildMetadata.SBOM, err = sbomContent.InFormats(context.BuildpackInfo.SBOMFormats...)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
@@ -69,6 +72,7 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter, clock chronos.Clock, 
 		return packit.BuildResult{
 			Plan:   context.Plan,
 			Layers: []packit.Layer{modCacheLayer},
+			Build:  buildMetadata,
 		}, nil
 	}
 }
