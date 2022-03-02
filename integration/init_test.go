@@ -13,6 +13,7 @@ import (
 	"github.com/sclevine/spec/report"
 
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/format"
 )
 
 var settings struct {
@@ -37,6 +38,7 @@ var settings struct {
 
 func TestIntegration(t *testing.T) {
 	Expect := NewWithT(t).Expect
+	format.MaxLength = 0
 
 	file, err := os.Open("../integration.json")
 	Expect(err).NotTo(HaveOccurred())

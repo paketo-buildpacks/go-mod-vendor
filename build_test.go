@@ -6,6 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/sbom"
 
 	gomodvendor "github.com/paketo-buildpacks/go-mod-vendor"
 	"github.com/paketo-buildpacks/go-mod-vendor/fakes"
@@ -20,10 +24,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		layersDir    string
-		workingDir   string
-		logs         *bytes.Buffer
-		buildProcess *fakes.BuildProcess
+		layersDir     string
+		workingDir    string
+		logs          *bytes.Buffer
+		buildProcess  *fakes.BuildProcess
+		sbomGenerator *fakes.SBOMGenerator
+		clock         chronos.Clock
 
 		build packit.BuildFunc
 	)
@@ -41,9 +47,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buildProcess = &fakes.BuildProcess{}
 		buildProcess.ShouldRunCall.Returns.Ok = true
 
+		now := time.Now()
+		clock = chronos.NewClock(func() time.Time {
+			return now
+		})
+
+		sbomGenerator = &fakes.SBOMGenerator{}
+		sbomGenerator.GenerateCall.Returns.SBOM = sbom.SBOM{}
+
 		build = gomodvendor.Build(
 			buildProcess,
 			scribe.NewEmitter(logs),
+			clock,
+			sbomGenerator,
 		)
 	})
 
@@ -57,26 +73,35 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Layers:     packit.Layers{Path: layersDir},
 			WorkingDir: workingDir,
 			BuildpackInfo: packit.BuildpackInfo{
-				Name:    "Some Buildpack",
-				Version: "some-version",
+				Name:        "Some Buildpack",
+				Version:     "some-version",
+				SBOMFormats: []string{"application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"},
 			},
 		})
-		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result).To(Equal(packit.BuildResult{
-			Layers: []packit.Layer{
-				{
-					Name:             "mod-cache",
-					Path:             filepath.Join(layersDir, "mod-cache"),
-					SharedEnv:        packit.Environment{},
-					BuildEnv:         packit.Environment{},
-					LaunchEnv:        packit.Environment{},
-					ProcessLaunchEnv: map[string]packit.Environment{},
-					Build:            false,
-					Launch:           false,
-					Cache:            true,
-					Metadata:         nil,
-				},
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result.Layers[0].Name).To(Equal("mod-cache"))
+		Expect(result.Layers[0].Path).To(Equal(filepath.Join(layersDir, "mod-cache")))
+		Expect(result.Layers[0].SharedEnv).To(Equal(packit.Environment{}))
+		Expect(result.Layers[0].BuildEnv).To(Equal(packit.Environment{}))
+		Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{}))
+		Expect(result.Layers[0].ProcessLaunchEnv).To(Equal(map[string]packit.Environment{}))
+		Expect(result.Layers[0].Build).To(BeFalse())
+		Expect(result.Layers[0].Launch).To(BeFalse())
+		Expect(result.Layers[0].Cache).To(BeTrue())
+
+		Expect(result.Build.SBOM.Formats()).To(Equal([]packit.SBOMFormat{
+			{
+				Extension: "cdx.json",
+				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.CycloneDXFormat),
+			},
+			{
+				Extension: "spdx.json",
+				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.SPDXFormat),
+			},
+			{
+				Extension: "syft.json",
+				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.SyftFormat),
 			},
 		}))
 
@@ -153,6 +178,36 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					WorkingDir: workingDir,
 				})
 				Expect(err).To(MatchError(ContainSubstring("build process failed to execute")))
+			})
+		})
+		context("when the BOM cannot be generated", func() {
+			it.Before(func() {
+				sbomGenerator.GenerateCall.Returns.Error = errors.New("failed to generate SBOM")
+			})
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					BuildpackInfo: packit.BuildpackInfo{
+						SBOMFormats: []string{"application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"},
+					},
+					WorkingDir: workingDir,
+					Layers:     packit.Layers{Path: layersDir},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{{Name: "node_modules"}},
+					},
+					Stack: "some-stack",
+				})
+				Expect(err).To(MatchError("failed to generate SBOM"))
+			})
+		})
+
+		context("when the BOM cannot be formatted", func() {
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					BuildpackInfo: packit.BuildpackInfo{
+						SBOMFormats: []string{"random-format"},
+					},
+				})
+				Expect(err).To(MatchError("\"random-format\" is not a supported SBOM format"))
 			})
 		})
 	})

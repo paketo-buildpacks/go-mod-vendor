@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/paketo-buildpacks/occam"
@@ -29,24 +30,30 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 
 	context("when building a simple go mod app", func() {
 		var (
-			image     occam.Image
-			container occam.Container
+			image      occam.Image
+			container1 occam.Container
 
-			name   string
-			source string
+			name    string
+			source  string
+			sbomDir string
 		)
 
 		it.Before(func() {
 			var err error
 			name, err = occam.RandomName()
 			Expect(err).NotTo(HaveOccurred())
+
+			sbomDir, err = os.MkdirTemp("", "sbom")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Chmod(sbomDir, os.ModePerm)).To(Succeed())
 		})
 
 		it.After(func() {
-			Expect(docker.Container.Remove.Execute(container.ID)).To(Succeed())
+			Expect(docker.Container.Remove.Execute(container1.ID)).To(Succeed())
 			Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
 			Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
 			Expect(os.RemoveAll(source)).To(Succeed())
+			Expect(os.RemoveAll(sbomDir)).To(Succeed())
 		})
 
 		it("builds successfully", func() {
@@ -61,6 +68,10 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 					settings.Buildpacks.GoDist.Online,
 					settings.Buildpacks.GoModVendor.Online,
 				).
+				WithEnv(map[string]string{
+					"BP_LOG_LEVEL": "DEBUG",
+				}).
+				WithSBOMOutputDir(sbomDir).
 				Execute(name, source)
 			Expect(err).ToNot(HaveOccurred(), logs.String)
 
@@ -74,21 +85,39 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				"    Running 'go mod vendor'",
 				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
 				"",
+				"  Generating SBOM for directory /workspace",
+				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
+				"",
+				"  Writing SBOM in the following format(s):",
+				"    application/vnd.cyclonedx+json",
+				"    application/spdx+json",
+				"    application/vnd.syft+json",
 			))
 
-			container, err = docker.Container.Run.
+			container1, err = docker.Container.Run.
 				WithCommand("ls -alR /workspace").
 				Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() fmt.Stringer {
-				logs, _ = docker.Container.Logs.Execute(container.ID)
+				logs, _ = docker.Container.Logs.Execute(container1.ID)
 				return logs
 			}).Should(SatisfyAll(
 				ContainSubstring("go.sum"),
 				ContainSubstring("vendor/github.com/BurntSushi"),
 				ContainSubstring("vendor/github.com/satori"),
 			))
+
+			// check that all required SBOM files are present
+			Expect(filepath.Join(sbomDir, "sbom", "build", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "sbom.cdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "build", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "sbom.spdx.json")).To(BeARegularFile())
+			Expect(filepath.Join(sbomDir, "sbom", "build", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "sbom.syft.json")).To(BeARegularFile())
+
+			// check an SBOM file to make sure it contains the expected modules
+			contents, err := os.ReadFile(filepath.Join(sbomDir, "sbom", "build", strings.ReplaceAll(settings.Buildpack.ID, "/", "_"), "sbom.cdx.json"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(contents)).To(ContainSubstring(`"name": "github.com/BurntSushi/toml"`))
+			Expect(string(contents)).To(ContainSubstring(`"name": "github.com/satori/go.uuid"`))
 		})
 	})
 }
