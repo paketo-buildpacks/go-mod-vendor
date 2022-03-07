@@ -91,7 +91,7 @@ func (m ModVendor) Execute(path, workingDir string) error {
 	duration, err := m.clock.Measure(func() error {
 		return m.executable.Execute(pexec.Execution{
 			Args:   args,
-			Env:    append(os.Environ(), fmt.Sprintf("GOPATH=%s", path)),
+			Env:    append(os.Environ(), fmt.Sprintf("GOMODCACHE=%s", path)),
 			Dir:    workingDir,
 			Stdout: buffer,
 			Stderr: buffer,

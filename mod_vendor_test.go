@@ -165,7 +165,7 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 			err := modVendor.Execute("mod-cache-path", workingDir)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(executable.ExecuteCall.Receives.Execution.Args).To(Equal([]string{"mod", "vendor"}))
-			Expect(executable.ExecuteCall.Receives.Execution.Env).To(Equal(append(environment, fmt.Sprintf("GOPATH=%s", "mod-cache-path"))))
+			Expect(executable.ExecuteCall.Receives.Execution.Env).To(Equal(append(environment, fmt.Sprintf("GOMODCACHE=%s", "mod-cache-path"))))
 			Expect(executable.ExecuteCall.Receives.Execution.Dir).To(Equal(workingDir))
 
 			Expect(logs.String()).To(ContainSubstring("  Executing build process"))
