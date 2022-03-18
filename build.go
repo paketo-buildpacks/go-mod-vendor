@@ -1,10 +1,13 @@
 package gomodvendor
 
 import (
+	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
@@ -48,11 +51,20 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter, clock chronos.Clock, 
 			return packit.BuildResult{}, err
 		}
 
-		logs.GeneratingSBOM(context.WorkingDir)
+		logs.GeneratingSBOM(filepath.Join(context.WorkingDir, "go.mod"))
+
+		exists, err := fs.Exists(filepath.Join(context.WorkingDir, "go.mod"))
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		if !exists {
+			return packit.BuildResult{}, fmt.Errorf("failed to generate SBOM: '%s' does not exist", filepath.Join(context.WorkingDir, "go.mod"))
+		}
 
 		var sbomContent sbom.SBOM
 		duration, err := clock.Measure(func() error {
-			sbomContent, err = sbomGenerator.Generate(context.WorkingDir)
+			sbomContent, err = sbomGenerator.Generate(filepath.Join(context.WorkingDir, "go.mod"))
 			return err
 		})
 		if err != nil {

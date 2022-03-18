@@ -3,6 +3,7 @@ package gomodvendor_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -41,6 +42,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
+
+		Expect(os.WriteFile(filepath.Join(workingDir, "go.mod"), nil, os.ModePerm))
 
 		logs = bytes.NewBuffer(nil)
 
@@ -110,6 +113,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(buildProcess.ExecuteCall.Receives.Path).To(Equal(filepath.Join(layersDir, "mod-cache")))
 		Expect(buildProcess.ExecuteCall.Receives.WorkingDir).To(Equal(workingDir))
 
+		Expect(sbomGenerator.GenerateCall.Receives.Dir).To(Equal(filepath.Join(workingDir, "go.mod")))
+
 		Expect(logs.String()).To(ContainSubstring("Some Buildpack some-version"))
 		Expect(logs.String()).NotTo(ContainSubstring("Skipping build process: module graph is empty"))
 	})
@@ -178,6 +183,48 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					WorkingDir: workingDir,
 				})
 				Expect(err).To(MatchError(ContainSubstring("build process failed to execute")))
+			})
+		})
+		context("when checking for go.mod fails", func() {
+			it.Before(func() {
+				Expect(os.Chmod(workingDir, 0000)).To(Succeed())
+			})
+			it.After(func() {
+				Expect(os.Chmod(workingDir, os.ModePerm)).To(Succeed())
+			})
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					BuildpackInfo: packit.BuildpackInfo{
+						SBOMFormats: []string{"application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"},
+					},
+					WorkingDir: workingDir,
+					Layers:     packit.Layers{Path: layersDir},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{{Name: "node_modules"}},
+					},
+					Stack: "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+			})
+
+		})
+		context("when go.mod is missing", func() {
+			it.Before(func() {
+				Expect(os.RemoveAll(filepath.Join(workingDir, "go.mod"))).To(Succeed())
+			})
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					BuildpackInfo: packit.BuildpackInfo{
+						SBOMFormats: []string{"application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"},
+					},
+					WorkingDir: workingDir,
+					Layers:     packit.Layers{Path: layersDir},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{{Name: "node_modules"}},
+					},
+					Stack: "some-stack",
+				})
+				Expect(err).To(MatchError(ContainSubstring(fmt.Sprintf("failed to generate SBOM: '%s' does not exist", filepath.Join(workingDir, "go.mod")))))
 			})
 		})
 		context("when the BOM cannot be generated", func() {
