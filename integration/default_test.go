@@ -85,7 +85,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				"    Running 'go mod vendor'",
 				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
 				"",
-				"  Generating SBOM for directory /workspace",
+				"  Generating SBOM for directory /workspace/go.mod",
 				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
 				"",
 				"  Writing SBOM in the following format(s):",
