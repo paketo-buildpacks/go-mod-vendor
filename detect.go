@@ -1,11 +1,10 @@
 package gomodvendor
 
 import (
-	"errors"
-	"os"
 	"path/filepath"
 
 	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/fs"
 )
 
 //go:generate faux --interface VersionParser --output fakes/version_parser.go
@@ -21,11 +20,16 @@ type BuildPlanMetadata struct {
 
 func Detect(goModParser VersionParser) packit.DetectFunc {
 	return func(context packit.DetectContext) (packit.DetectResult, error) {
-		version, err := goModParser.ParseVersion(filepath.Join(context.WorkingDir, GoModLocation))
+		goModFilepath := filepath.Join(context.WorkingDir, GoModLocation)
+		exists, err := fs.Exists(goModFilepath)
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				return packit.DetectResult{}, packit.Fail.WithMessage("go.mod file is not present")
-			}
+			return packit.DetectResult{}, err
+		}
+		if !exists {
+			return packit.DetectResult{}, packit.Fail.WithMessage("go.mod file is not present")
+		}
+		version, err := goModParser.ParseVersion(goModFilepath)
+		if err != nil {
 			return packit.DetectResult{}, err
 		}
 

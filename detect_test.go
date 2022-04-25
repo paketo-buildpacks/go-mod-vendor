@@ -2,7 +2,6 @@ package gomodvendor_test
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,16 +20,23 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 		workingDir  string
 		goModParser *fakes.VersionParser
-		detect      packit.DetectFunc
+
+		detect        packit.DetectFunc
+		detectContext packit.DetectContext
 	)
 
 	it.Before(func() {
 		var err error
 		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
+
 		goModParser = &fakes.VersionParser{}
 
+		Expect(os.WriteFile(filepath.Join(workingDir, "go.mod"), []byte{}, os.ModePerm)).To(Succeed())
+
 		detect = gomodvendor.Detect(goModParser)
+
+		detectContext = packit.DetectContext{WorkingDir: workingDir}
 	})
 
 	it.After(func() {
@@ -42,10 +48,9 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("detects", func() {
-		result, err := detect(packit.DetectContext{
-			WorkingDir: workingDir,
-		})
+		result, err := detect(detectContext)
 		Expect(err).NotTo(HaveOccurred())
+
 		Expect(result.Plan).To(Equal(packit.BuildPlan{
 			Requires: []packit.BuildPlanRequirement{
 				{
@@ -62,14 +67,11 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 
 	context("go.mod does not exist in the working directory", func() {
 		it.Before(func() {
-			_, err := os.Stat("/no/such/go.mod")
-			goModParser.ParseVersionCall.Returns.Err = fmt.Errorf("failed to parse go.mod: %w", err)
+			Expect(os.Remove(filepath.Join(workingDir, "go.mod"))).To(Succeed())
 		})
 
 		it("fails detection", func() {
-			_, err := detect(packit.DetectContext{
-				WorkingDir: workingDir,
-			})
+			_, err := detect(detectContext)
 			Expect(err).To(MatchError(packit.Fail.WithMessage("go.mod file is not present")))
 		})
 	})
@@ -80,10 +82,9 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("detects", func() {
-			result, err := detect(packit.DetectContext{
-				WorkingDir: workingDir,
-			})
+			result, err := detect(detectContext)
 			Expect(err).NotTo(HaveOccurred())
+
 			Expect(result.Plan).To(Equal(packit.BuildPlan{
 				Requires: []packit.BuildPlanRequirement{
 					{
@@ -100,16 +101,29 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("failure cases", func() {
-		context("the go.mod file cannot be read", func() {
+		context("there is an error determining if the go.mod file exists", func() {
 			it.Before(func() {
-				goModParser.ParseVersionCall.Returns.Err = errors.New("failed to read go.mod file")
+				Expect(os.Chmod(workingDir, 0000)).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.Chmod(workingDir, os.ModePerm)).To(Succeed())
 			})
 
 			it("returns an error", func() {
-				_, err := detect(packit.DetectContext{
-					WorkingDir: workingDir,
-				})
-				Expect(err).To(MatchError("failed to read go.mod file"))
+				_, err := detect(detectContext)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		context("the go.mod file cannot be read", func() {
+			it.Before(func() {
+				goModParser.ParseVersionCall.Returns.Err = errors.New("some error")
+			})
+
+			it("returns an error", func() {
+				_, err := detect(detectContext)
+				Expect(err).To(MatchError("some error"))
 			})
 		})
 	})
