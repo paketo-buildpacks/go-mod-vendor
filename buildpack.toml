@@ -1,9 +1,11 @@
-api = "0.7"
+api = "0.8"
 
 [buildpack]
+  description = "A buildpack for installing the Go modules using go mod"
   homepage = "https://github.com/paketo-buildpacks/go-mod-vendor"
   id = "paketo-buildpacks/go-mod-vendor"
   name = "Paketo Go Mod Vendor Buildpack"
+  keywords = ["go", "mod", "vendor", "modules"]
   sbom-formats = ["application/vnd.cyclonedx+json","application/spdx+json","application/vnd.syft+json"]
 
   [[buildpack.licenses]]
@@ -13,12 +15,6 @@ api = "0.7"
 [metadata]
   include-files = ["bin/build", "bin/detect", "bin/run", "buildpack.toml"]
   pre-package = "./scripts/build.sh"
-
-[[stacks]]
-  id = "io.buildpacks.stacks.bionic"
-
-[[stacks]]
-  id = "io.paketo.stacks.tiny"
 
 [[stacks]]
   id = "*"
