@@ -1,7 +1,7 @@
 api = "0.8"
 
 [buildpack]
-  description = "A buildpack for installing the Go modules using go mod"
+  description = "A buildpack for installing Go modules using go mod"
   homepage = "https://github.com/paketo-buildpacks/go-mod-vendor"
   id = "paketo-buildpacks/go-mod-vendor"
   name = "Paketo Go Mod Vendor Buildpack"
