@@ -30,8 +30,8 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 
 	context("when building a simple go mod app", func() {
 		var (
-			image      occam.Image
-			container1 occam.Container
+			image     occam.Image
+			container occam.Container
 
 			name    string
 			source  string
@@ -49,9 +49,10 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it.After(func() {
-			Expect(docker.Container.Remove.Execute(container1.ID)).To(Succeed())
+			Expect(docker.Container.Remove.Execute(container.ID)).To(Succeed())
 			Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
 			Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
+
 			Expect(os.RemoveAll(source)).To(Succeed())
 			Expect(os.RemoveAll(sbomDir)).To(Succeed())
 		})
@@ -94,13 +95,13 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				"    application/vnd.syft+json",
 			))
 
-			container1, err = docker.Container.Run.
+			container, err = docker.Container.Run.
 				WithCommand("ls -alR /workspace").
 				Execute(image.ID)
 			Expect(err).NotTo(HaveOccurred())
 
 			Eventually(func() fmt.Stringer {
-				logs, _ = docker.Container.Logs.Execute(container1.ID)
+				logs, _ = docker.Container.Logs.Execute(container.ID)
 				return logs
 			}).Should(SatisfyAll(
 				ContainSubstring("go.sum"),
