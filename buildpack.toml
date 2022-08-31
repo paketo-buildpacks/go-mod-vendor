@@ -4,7 +4,7 @@ api = "0.7"
   description = "A buildpack for installing Go modules using go mod"
   homepage = "https://github.com/paketo-buildpacks/go-mod-vendor"
   id = "paketo-buildpacks/go-mod-vendor"
-  name = "Paketo Go Mod Vendor Buildpack"
+  name = "Paketo Buildpack for Go Mod Vendor"
   keywords = ["go", "mod", "vendor", "modules"]
   sbom-formats = ["application/vnd.cyclonedx+json","application/spdx+json","application/vnd.syft+json"]
 
