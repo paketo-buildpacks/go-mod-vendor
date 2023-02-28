@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -78,35 +79,65 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			BuildpackInfo: packit.BuildpackInfo{
 				Name:        "Some Buildpack",
 				Version:     "some-version",
-				SBOMFormats: []string{"application/vnd.cyclonedx+json", "application/spdx+json", "application/vnd.syft+json"},
+				SBOMFormats: []string{"application/vnd.cyclonedx+json", "application/spdx+json"},
 			},
 		})
-
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result.Layers[0].Name).To(Equal("mod-cache"))
-		Expect(result.Layers[0].Path).To(Equal(filepath.Join(layersDir, "mod-cache")))
-		Expect(result.Layers[0].SharedEnv).To(Equal(packit.Environment{}))
-		Expect(result.Layers[0].BuildEnv).To(Equal(packit.Environment{}))
-		Expect(result.Layers[0].LaunchEnv).To(Equal(packit.Environment{}))
-		Expect(result.Layers[0].ProcessLaunchEnv).To(Equal(map[string]packit.Environment{}))
-		Expect(result.Layers[0].Build).To(BeFalse())
-		Expect(result.Layers[0].Launch).To(BeFalse())
-		Expect(result.Layers[0].Cache).To(BeTrue())
 
-		Expect(result.Build.SBOM.Formats()).To(Equal([]packit.SBOMFormat{
-			{
-				Extension: "cdx.json",
-				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.CycloneDXFormat),
+		Expect(result.Layers).To(HaveLen(1))
+		layer := result.Layers[0]
+
+		Expect(layer.Name).To(Equal("mod-cache"))
+		Expect(layer.Path).To(Equal(filepath.Join(layersDir, "mod-cache")))
+
+		Expect(result.Build.SBOM.Formats()).To(HaveLen(2))
+		cdx := result.Build.SBOM.Formats()[0]
+		spdx := result.Build.SBOM.Formats()[1]
+
+		Expect(cdx.Extension).To(Equal("cdx.json"))
+		content, err := io.ReadAll(cdx.Content)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(content)).To(MatchJSON(`{
+			"bomFormat": "CycloneDX",
+			"components": [],
+			"metadata": {
+				"tools": [
+					{
+						"name": "syft",
+						"vendor": "anchore",
+						"version": "[not provided]"
+					}
+				]
 			},
-			{
-				Extension: "spdx.json",
-				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.SPDXFormat),
+			"specVersion": "1.3",
+			"version": 1
+		}`))
+
+		Expect(spdx.Extension).To(Equal("spdx.json"))
+		content, err = io.ReadAll(spdx.Content)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(content)).To(MatchJSON(`{
+			"SPDXID": "SPDXRef-DOCUMENT",
+			"creationInfo": {
+				"created": "0001-01-01T00:00:00Z",
+				"creators": [
+					"Organization: Anchore, Inc",
+					"Tool: syft-"
+				],
+				"licenseListVersion": "3.16"
 			},
-			{
-				Extension: "syft.json",
-				Content:   sbom.NewFormattedReader(sbom.SBOM{}, sbom.SyftFormat),
-			},
-		}))
+			"dataLicense": "CC0-1.0",
+			"documentNamespace": "https://paketo.io/packit/unknown-source-type/unknown-88cfa225-65e0-5755-895f-c1c8f10fde76",
+			"name": "unknown",
+			"relationships": [
+				{
+					"relatedSpdxElement": "SPDXRef-DOCUMENT",
+					"relationshipType": "DESCRIBES",
+					"spdxElementId": "SPDXRef-DOCUMENT"
+				}
+			],
+			"spdxVersion": "SPDX-2.2"
+		}`))
 
 		Expect(buildProcess.ShouldRunCall.Receives.WorkingDir).To(Equal(workingDir))
 
