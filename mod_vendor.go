@@ -82,7 +82,6 @@ func (m ModVendor) hasModuleGraph(workingDir string) (bool, error) {
 }
 
 func (m ModVendor) Execute(path, workingDir string) error {
-	buffer := bytes.NewBuffer(nil)
 	args := []string{"mod", "vendor"}
 
 	m.logs.Process("Executing build process")
@@ -93,14 +92,12 @@ func (m ModVendor) Execute(path, workingDir string) error {
 			Args:   args,
 			Env:    append(os.Environ(), fmt.Sprintf("GOMODCACHE=%s", path)),
 			Dir:    workingDir,
-			Stdout: buffer,
-			Stderr: buffer,
+			Stdout: m.logs.ActionWriter,
+			Stderr: m.logs.ActionWriter,
 		})
 	})
 	if err != nil {
 		m.logs.Action("Failed after %s", duration.Round(time.Millisecond))
-		m.logs.Detail(buffer.String())
-
 		return err
 	}
 
