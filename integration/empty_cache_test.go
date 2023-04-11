@@ -63,15 +63,14 @@ func testEmptyCache(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(logs).To(ContainLines(
 				MatchRegexp(fmt.Sprintf(`%s \d+\.\d+\.\d+`, settings.Buildpack.Name)),
-				"  Checking module graph",
-				"    Running 'go mod graph'",
+				"  Executing build process",
+				"    Running 'go mod vendor'",
+				"      go: no dependencies to vendor",
 				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
-				"",
-				"  Skipping build process: module graph is empty",
 				"",
 			))
 
-			Expect(logs).NotTo(ContainSubstring(fmt.Sprintf("%s:mod-cache", settings.Buildpack.ID)))
+			Expect(logs).NotTo(ContainSubstring(fmt.Sprintf("%s:mod-cache", settings.Buildpack.ID)), logs.String)
 		})
 	})
 }

@@ -62,53 +62,6 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("ShouldRun", func() {
-		context("when the module graph is not empty and there is no vendor directory present", func() {
-			it.Before(func() {
-				executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
-					fmt.Fprintln(execution.Stdout, "myapp somepackage\nmyapp otherpackage")
-
-					return nil
-				}
-			})
-
-			it("returns true", func() {
-				ok, _, err := modVendor.ShouldRun(workingDir)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ok).To(BeTrue())
-
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args:   []string{"mod", "graph"},
-					Dir:    workingDir,
-					Stdout: bytes.NewBuffer([]byte("myapp somepackage\nmyapp otherpackage\n")),
-					Stderr: bytes.NewBuffer([]byte("myapp somepackage\nmyapp otherpackage\n")),
-				}))
-
-				Expect(logs.String()).To(ContainSubstring("  Checking module graph"))
-				Expect(logs.String()).To(ContainSubstring("    Running 'go mod graph'"))
-				Expect(logs.String()).To(ContainSubstring("      Completed in 1s"))
-			})
-		})
-
-		context("when the module graph is empty", func() {
-			it("returns false", func() {
-				ok, reason, err := modVendor.ShouldRun(workingDir)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ok).To(BeFalse())
-				Expect(reason).To(Equal("module graph is empty"))
-
-				Expect(executable.ExecuteCall.Receives.Execution).To(Equal(pexec.Execution{
-					Args:   []string{"mod", "graph"},
-					Dir:    workingDir,
-					Stdout: bytes.NewBuffer(nil),
-					Stderr: bytes.NewBuffer(nil),
-				}))
-
-				Expect(logs.String()).To(ContainSubstring("  Checking module graph"))
-				Expect(logs.String()).To(ContainSubstring("    Running 'go mod graph'"))
-				Expect(logs.String()).To(ContainSubstring("      Completed in 1s"))
-			})
-		})
-
 		context("when there is a vendor directory present", func() {
 			it.Before(func() {
 				Expect(os.Mkdir(filepath.Join(workingDir, "vendor"), os.ModePerm)).To(Succeed())
@@ -135,26 +88,6 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 				it("returns an error", func() {
 					_, _, err := modVendor.ShouldRun(workingDir)
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
-				})
-			})
-
-			context("the executable fails", func() {
-				it.Before(func() {
-					executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
-						fmt.Fprintln(execution.Stdout, "build error stdout")
-						fmt.Fprintln(execution.Stderr, "build error stderr")
-
-						return errors.New("executable failed")
-					}
-				})
-
-				it("returns an error", func() {
-					_, _, err := modVendor.ShouldRun(workingDir)
-					Expect(err).To(MatchError(ContainSubstring("executable failed")))
-
-					Expect(logs.String()).To(ContainSubstring("      Failed after 1s"))
-					Expect(logs.String()).To(ContainSubstring("        build error stdout"))
-					Expect(logs.String()).To(ContainSubstring("        build error stderr"))
 				})
 			})
 		})

@@ -51,6 +51,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buildProcess = &fakes.BuildProcess{}
 		buildProcess.ShouldRunCall.Returns.Ok = true
 
+		err = os.MkdirAll(filepath.Join(layersDir, "mod-cache"), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
 		now := time.Now()
 		clock = chronos.NewClock(func() time.Time {
 			return now
@@ -150,10 +153,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(logs.String()).NotTo(ContainSubstring("Skipping build process: module graph is empty"))
 	})
 
-	context("when there are no modules in go.mod", func() {
+	context("when the mod cache layer does not exist", func() {
 		it.Before(func() {
-			buildProcess.ShouldRunCall.Returns.Ok = false
-			buildProcess.ShouldRunCall.Returns.Reason = "module graph is empty"
+			err := os.RemoveAll(filepath.Join(layersDir, "mod-cache"))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		it("does not include the module cache layer in the build result", func() {
@@ -167,9 +170,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(result).To(Equal(packit.BuildResult{}))
-
-			Expect(logs.String()).To(ContainSubstring("Skipping build process: module graph is empty"))
+			Expect(result.Layers).To(BeEmpty())
 		})
 	})
 
