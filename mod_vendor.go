@@ -1,7 +1,6 @@
 package gomodvendor
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -42,43 +41,7 @@ func (m ModVendor) ShouldRun(workingDir string) (bool, string, error) {
 		return false, "modules are already vendored", nil
 	}
 
-	ok, err = m.hasModuleGraph(workingDir)
-	if err != nil {
-		return false, "", err
-	}
-	if !ok {
-		return false, "module graph is empty", nil
-	}
-
 	return true, "", nil
-}
-
-func (m ModVendor) hasModuleGraph(workingDir string) (bool, error) {
-	buffer := bytes.NewBuffer(nil)
-	args := []string{"mod", "graph"}
-
-	m.logs.Process("Checking module graph")
-	m.logs.Subprocess("Running 'go %s'", strings.Join(args, " "))
-
-	duration, err := m.clock.Measure(func() error {
-		return m.executable.Execute(pexec.Execution{
-			Args:   args,
-			Dir:    workingDir,
-			Stdout: buffer,
-			Stderr: buffer,
-		})
-	})
-	if err != nil {
-		m.logs.Action("Failed after %s", duration.Round(time.Millisecond))
-		m.logs.Detail(buffer.String())
-
-		return false, err
-	}
-
-	m.logs.Action("Completed in %s", duration.Round(time.Millisecond))
-	m.logs.Break()
-
-	return buffer.Len() > 0, nil
 }
 
 func (m ModVendor) Execute(path, workingDir string) error {

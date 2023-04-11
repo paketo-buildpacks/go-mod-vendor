@@ -81,9 +81,19 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter, clock chronos.Clock, 
 			return packit.BuildResult{}, err
 		}
 
+		var layers []packit.Layer
+		exists, err = fs.Exists(modCacheLayer.Path)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		if exists {
+			layers = append(layers, modCacheLayer)
+		}
+
 		return packit.BuildResult{
 			Plan:   context.Plan,
-			Layers: []packit.Layer{modCacheLayer},
+			Layers: layers,
 			Build:  buildMetadata,
 		}, nil
 	}

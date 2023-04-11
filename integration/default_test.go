@@ -78,10 +78,6 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(logs).To(ContainLines(
 				MatchRegexp(fmt.Sprintf(`%s \d+\.\d+\.\d+`, settings.Buildpack.Name)),
-				"  Checking module graph",
-				"    Running 'go mod graph'",
-				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
-				"",
 				"  Executing build process",
 				"    Running 'go mod vendor'",
 				MatchRegexp(`      go: downloading github.com\/(BurntSushi\/toml|satori\/go.uuid) v.+`),
