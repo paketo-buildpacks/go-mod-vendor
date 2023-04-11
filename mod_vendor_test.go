@@ -161,6 +161,13 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("Execute", func() {
+		it.Before(func() {
+			executable.ExecuteCall.Stub = func(execution pexec.Execution) error {
+				fmt.Fprintln(execution.Stdout, "stdout-output")
+				fmt.Fprintln(execution.Stderr, "stderr-output")
+				return nil
+			}
+		})
 		it("runs go mod vendor", func() {
 			err := modVendor.Execute("mod-cache-path", workingDir)
 			Expect(err).NotTo(HaveOccurred())
@@ -170,6 +177,8 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(logs.String()).To(ContainSubstring("  Executing build process"))
 			Expect(logs.String()).To(ContainSubstring("    Running 'go mod vendor'"))
+			Expect(logs.String()).To(ContainSubstring("      stdout-output"))
+			Expect(logs.String()).To(ContainSubstring("      stderr-output"))
 			Expect(logs.String()).To(ContainSubstring("      Completed in 1s"))
 		})
 
@@ -188,9 +197,9 @@ func testModVendor(t *testing.T, context spec.G, it spec.S) {
 					err := modVendor.Execute("mod-cache-path", workingDir)
 					Expect(err).To(MatchError(ContainSubstring("executable failed")))
 
+					Expect(logs.String()).To(ContainSubstring("      build error stdout"))
+					Expect(logs.String()).To(ContainSubstring("      build error stderr"))
 					Expect(logs.String()).To(ContainSubstring("      Failed after 1s"))
-					Expect(logs.String()).To(ContainSubstring("        build error stdout"))
-					Expect(logs.String()).To(ContainSubstring("        build error stderr"))
 				})
 			})
 		})
