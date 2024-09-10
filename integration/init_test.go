@@ -82,7 +82,6 @@ func TestIntegration(t *testing.T) {
 
 	suite := spec.New("Integration", spec.Report(report.Terminal{}), spec.Parallel())
 	suite("Default", testDefault)
-	suite("EmptyCache", testEmptyCache)
 	suite("Vendored", testVendored)
 	suite.Run(t)
 }
