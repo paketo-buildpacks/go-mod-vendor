@@ -58,6 +58,9 @@ func testEmptyCache(t *testing.T, context spec.G, it spec.S) {
 					settings.Buildpacks.GoDist.Online,
 					settings.Buildpacks.GoModVendor.Online,
 				).
+				WithEnv(map[string]string{
+					"GOTELEMETRY": "off",
+				}).
 				Execute(name, source)
 			Expect(err).NotTo(HaveOccurred(), logs.String)
 
@@ -70,7 +73,7 @@ func testEmptyCache(t *testing.T, context spec.G, it spec.S) {
 				"",
 			))
 
-			Expect(logs).NotTo(ContainSubstring(fmt.Sprintf("%s:mod-cache", settings.Buildpack.ID)), logs.String())
+			Expect(logs).NotTo(ContainSubstring(fmt.Sprintf("%s:mod-cache", settings.Buildpack.ID)), logs.String)
 		})
 	})
 }

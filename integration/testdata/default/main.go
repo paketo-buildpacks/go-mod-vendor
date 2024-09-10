@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ type Config struct {
 	Age int
 }
 
+//go:embed .occam-key
 func main() {
 	var conf Config
 	if _, err := toml.Decode("whatever", &conf); err != nil {
