@@ -1,3 +1,3 @@
 module no_modules
 
-go 1.14
+go 1.23
