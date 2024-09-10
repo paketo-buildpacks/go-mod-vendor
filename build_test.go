@@ -54,6 +54,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		err = os.MkdirAll(filepath.Join(layersDir, "mod-cache"), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
+		_, err = os.CreateTemp(filepath.Join(layersDir, "mod-cache"), "example")
+		Expect(err).NotTo(HaveOccurred())
+
 		now := time.Now()
 		clock = chronos.NewClock(func() time.Time {
 			return now
