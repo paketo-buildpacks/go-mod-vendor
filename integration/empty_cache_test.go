@@ -70,7 +70,7 @@ func testEmptyCache(t *testing.T, context spec.G, it spec.S) {
 				"",
 			))
 
-			Expect(logs).NotTo(ContainSubstring(fmt.Sprintf("%s:mod-cache", settings.Buildpack.ID)), logs.String)
+			Expect(logs).NotTo(ContainSubstring(fmt.Sprintf("%s:mod-cache", settings.Buildpack.ID)), logs.String())
 		})
 	})
 }
