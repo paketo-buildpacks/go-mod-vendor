@@ -88,7 +88,9 @@ func Build(buildProcess BuildProcess, logs scribe.Emitter, clock chronos.Clock, 
 		}
 
 		if exists {
-			layers = append(layers, modCacheLayer)
+			if !fs.IsEmptyDir(modCacheLayer.Path) {
+				layers = append(layers, modCacheLayer)
+			}
 		}
 
 		return packit.BuildResult{

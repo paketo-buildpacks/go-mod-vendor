@@ -54,6 +54,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		err = os.MkdirAll(filepath.Join(layersDir, "mod-cache"), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
+		Expect(os.WriteFile(filepath.Join(filepath.Join(layersDir, "mod-cache"), "cache"), nil, os.ModePerm))
+
 		now := time.Now()
 		clock = chronos.NewClock(func() time.Time {
 			return now
@@ -156,6 +158,27 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	context("when the mod cache layer does not exist", func() {
 		it.Before(func() {
 			err := os.RemoveAll(filepath.Join(layersDir, "mod-cache"))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		it("does not include the module cache layer in the build result", func() {
+			result, err := build(packit.BuildContext{
+				Layers:     packit.Layers{Path: layersDir},
+				WorkingDir: workingDir,
+				BuildpackInfo: packit.BuildpackInfo{
+					Name:    "Some Buildpack",
+					Version: "some-version",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(result.Layers).To(BeEmpty())
+		})
+	})
+
+	context("when the mod cache layer is empty", func() {
+		it.Before(func() {
+			err := os.RemoveAll(filepath.Join(layersDir, "mod-cache", "cache"))
 			Expect(err).NotTo(HaveOccurred())
 		})
 
