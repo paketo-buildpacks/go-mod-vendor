@@ -5,3 +5,6 @@
 go-mod-cnb_*
 /bin/
 /build
+/linux
+/darwin
+/windows
