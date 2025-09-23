@@ -1,3 +1,6 @@
 {
-  "go-dist": "github.com/paketo-buildpacks/go-dist"
+  "go-dist": "index.docker.io/paketobuildpacks/go-dist",
+  "builders": [
+    "index.docker.io/paketobuildpacks/ubuntu-noble-builder-buildpackless:latest"
+  ]
 }
