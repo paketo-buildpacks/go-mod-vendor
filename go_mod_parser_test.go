@@ -21,7 +21,10 @@ func testGoModParser(t *testing.T, context spec.G, it spec.S) {
 	it.Before(func() {
 		file, err := os.CreateTemp("", "go.mod")
 		Expect(err).NotTo(HaveOccurred())
-		defer file.Close()
+		defer func() {
+			err := file.Close()
+			Expect(err).NotTo(HaveOccurred())
+		}()
 
 		_, err = file.WriteString(`module github.com/some-org/some-repo
 
