@@ -84,8 +84,8 @@ github.com/CycloneDX/cyclonedx-go v0.11.0/go.mod h1:vUvbCXQsEm48OI6oOlanxstwNByX
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/DataDog/zstd v1.5.7 h1:ybO8RBeh29qrxIhCA9E8gKY6xfONU9T6G6aP9DTKfLE=
 github.com/DataDog/zstd v1.5.7/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
-github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.35.0 h1:bN1gA3of5bXtbnLsRPrwfmbbe7A5UWFlcTHseujLnpc=
-github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.35.0/go.mod h1:Yj5vHEz/aAepZGliRJsA6uvHAVAQyEwajq9ORCHPxzM=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.36.0 h1:3SdxXLkgAfiHRWcGTq6fneq9jgoJzneiY0yPQnjoT2E=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.36.0/go.mod h1:1iIdl0k+ppn9wT0wzR9H7HkSvIui/4qgtnKW10cQtds=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.60.0 h1:HldzheTs05E3ybqSitI/wHaof6+XERRudgZLjYbs3eE=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.60.0/go.mod h1:evkqaSczW9g2BQm1veCtgNhJ4wCCsRrOsSgNIn9LHQk=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/cloudmock v0.60.0 h1:Fx8NtDCmKH4ML2hUkPz4Dq250903vRDojMjVCDKwQuc=
